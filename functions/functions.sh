@@ -39,6 +39,7 @@ function validate_input_params() {
 
 }
 
+#TODO format properly multi-lines output
 function print_msg() {
 	if [ "$2" == "line" ]; then
 
@@ -54,4 +55,18 @@ function print_msg() {
 	else 
 		echo "[INFO] $1"
 	fi
+}
+
+function print_err() {
+	echo "[ERROR] $1"
+}
+
+function print_build_msg() {
+	print_msg - line
+	if [ $WF_STATUS -eq 0 ]; then
+		print_msg "BUILD SUCCESS"
+	else
+		print_msg "BUILD FAILURE"
+	fi
+	print_msg - line
 }

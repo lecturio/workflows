@@ -6,6 +6,7 @@ export WF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export WF_TASK=$1
 export WF_COMMAND=$2
 export WF_ENV=$3
+export WF_STATUS=0
 
 source $WF_DIR/config.sh
 source $WF_DIR/functions/functions.sh
@@ -22,13 +23,21 @@ fi
 cd $WF_PROJECT_ROOT
 #TODO if is missing - clone it
 
-source $WF_DIR/commands/${WF_COMMAND}.sh
+print_msg "Scanning for tasks..."
+print_msg - line
 
-print_msg - line
-if [ $? -eq 0 ]; then
-	print_msg "BUILD SUCCESS"
-else
-	print_msg "BUILD FAILURE"
-	print_msg $? error
-fi
-print_msg - line
+for i in "$@"
+do
+case $i in
+    -m=*|--message=*)
+    MESSAGE="${i#*=}"
+
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+source $WF_DIR/commands/${WF_COMMAND}.sh
+print_build_msg
