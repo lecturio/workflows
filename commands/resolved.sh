@@ -107,6 +107,10 @@ function sync_feature_changes() {
 
 sync_feature_changes
 
+#TODO move to external file
 if [ "$WF_ENV" == "push" ]; then
-	echo "git push staging"
+	setup_staging_branch
+	if [ $WF_STATUS -eq 0]; then
+		echo "git push staging"
+	fi
 fi
