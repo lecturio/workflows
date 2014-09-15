@@ -39,5 +39,9 @@ case $i in
 esac
 done
 
+#source $WF_DIR/commands/${WF_COMMAND}.sh
+if [ "$WF_ENV" == "commit" ]; then
+	source $WF_DIR/commands/${WF_COMMAND}-${WF_ENV}.sh
+fi
 source $WF_DIR/commands/${WF_COMMAND}.sh
 print_build_msg

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#TODO move to external file
 function track_feature_branch() {
 	local CURRENT_BRANCH=`emit "git rev-parse --abbrev-ref HEAD"`
 
@@ -18,9 +19,10 @@ function track_feature_branch() {
 
 	emit_failonerror "git branch --track ${TRACK_BRANCH}" print_msg
 	emit_failonerror "git checkout ${TRACK_BRANCH}" quiet
-	emit "git push origin ${TRACK_BRANCH}" print_msg
+	emit_failonerror "git push origin ${TRACK_BRANCH}" print_msg
 }
 
+#TODO move to external file
 if [ "$WF_ENV" == "commit" ]; then
 	if [ "$MESSAGE" == "" ]; then
 
@@ -30,10 +32,11 @@ if [ "$WF_ENV" == "commit" ]; then
 		exit 1
 	fi
 
-	emit "git commit -am \"$MESSAGE\"" print_msg
+	emit_failonerror "git commit -am \"$MESSAGE\"" print_msg
 	# create track branch
 	track_feature_branch
 
+	emit "git checkout staging"
 	print_build_msg
 	exit 0
 fi
@@ -105,12 +108,16 @@ function sync_feature_changes() {
 	fi
 }
 
-sync_feature_changes
-
 #TODO move to external file
+# commit and push to one operation
 if [ "$WF_ENV" == "push" ]; then
 	setup_staging_branch
-	if [ $WF_STATUS -eq 0]; then
+	if [ $WF_STATUS -eq 0 ]; then
 		echo "git push staging"
 	fi
+
+	print_build_msg
+	exit 0
 fi
+
+sync_feature_changes
