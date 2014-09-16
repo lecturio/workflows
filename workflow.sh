@@ -40,7 +40,7 @@ esac
 done
 
 source $WF_DIR/commands/${WF_COMMAND}.sh
-if [ "$WF_ENV" == "commit" ]; then
+if [[ "$WF_COMMAND" == "resolved" && "$WF_ENV" == "sync" ]]; then
 	source $WF_DIR/commands/${WF_COMMAND}-${WF_ENV}.sh
 fi
 print_build_msg

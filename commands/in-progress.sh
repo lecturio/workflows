@@ -7,6 +7,7 @@ EXISTS_REMOTELY=`emit "git branch -r | grep origin/${WF_TASK}$"`
 
 if [ $EXISTS_LOCALLY -eq 0 ]; then
 	emit "git checkout $WF_TASK"
+	#emitgit_sync_branch $WF_TASK
 else
 	if [ $EXISTS_REMOTELY ]; then
 		emit "git checkout -b $WF_TASK origin/$WF_TASK" print_msg
