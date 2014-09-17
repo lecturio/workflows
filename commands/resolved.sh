@@ -1,6 +1,7 @@
 #!/bin/bash
 
 function setup_master_branch() {
+	emit "git checkout master" quiet
 	emit_failonerror "git pull --rebase origin master" print_msg
 }
 
@@ -18,24 +19,6 @@ function setup_feature_branch() {
 		print_msg "Resolve conflicts manually"
 		exit 1
 	fi
-
-	# update feature branch with master
-	#emit "git pull --rebase origin master"
-
-	#if [ $? -gt 0 ]; then
-#		emit "git rebase --abort"
-	#fi
-
-	#emit "git rebase --onto master"
-	
-	#if [ $? -gt 0 ]; then
-#		emit "git rebase --abort"
-#		print_err "Resolved conflicts manually"
-#		print_build_msg
-#		exit 0
-#	fi
-
-#	emit "git pull --rebase origin master"
 }
 
 # setup staging branch

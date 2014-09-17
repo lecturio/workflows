@@ -39,7 +39,6 @@ fi
 
 # create track branch
 track_feature_branch
-
 setup_staging_branch
 if [ $WF_STATUS -eq 0 ]; then
 	print_msg "git push staging"
