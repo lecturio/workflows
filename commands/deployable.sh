@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo "deployable"
-
 emit "git rebase --abort" quiet
 
 emit "git checkout master" quiet
@@ -13,4 +11,3 @@ emit_failonerror "git rebase master" print_msg
 
 emit "git checkout master" quiet
 emit_failonerror "git rebase $WF_TASK"
-print_msg "Push your changes to master"
