@@ -7,7 +7,7 @@ When feature is ready - it is merged with master and from there released to live
 
 # Usage
 
-Create copy of config-changed.sh to config.sh and edit following values:
+Create copy of config-change.sh to config.sh and edit following values:
 
 * `WF_REPO` - git remote respository
 * `WF_PROJECT_ROOT` - directory where project is cloned
