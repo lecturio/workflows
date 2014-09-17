@@ -1,7 +1,7 @@
 Workflows
 =========
 
-Git workflow for application with staging and live enviroment.
+Git workflow for application with staging and live environment.
 All features are merged with staging branch and from there- released on staging system.
 When feature is ready - it is merged with master and from there released to live system.
 
@@ -40,15 +40,15 @@ export WF_VERBOSE=0
 
 * master- deployed on `live server`
  * rebase with feature (one time)
-* staging- depoyed on `staging server`
+* staging- deployed on `staging server`
 * feature
  * created from master
  * cherry-picked - until feature is approved to staging (multiple times)
- * rebase with master - retrive chages from master (multiple times)
+ * rebase with master - retrieve changes from master (multiple times)
 
 # Goals
 
-Tool have following pattern: ./worflow.sh [FEATURE] [GOAL] [OPTION] where:
+Tool have following pattern: ./workflow.sh [FEATURE] [GOAL] [OPTION] where:
 
 * FEATURE - XXX-001
 * GOAL
@@ -56,7 +56,7 @@ Tool have following pattern: ./worflow.sh [FEATURE] [GOAL] [OPTION] where:
  * resolved, option sync
  * deployed
  * close - not implemented
-* OPTION - some goals have addtional options like `resolved`
+* OPTION - some goals have additional options like `resolved`
 
 ## In progress
 
@@ -85,7 +85,7 @@ Review merge files before make commit to staging branch.
 Review cherry-pick changes. If merge is ok - they are ready for commit.
 
 ### Conflict
-Resolving of conflicts - use `git add` or `git rm`. When conflict is resoved move to `git cherry-pick --continue`.
+Resolving of conflicts - use `git add` or `git rm`. When conflict is resolved move to `git cherry-pick --continue`.
 
 Use `git status` to review modified files.
 Abort - restart goal.
@@ -113,7 +113,7 @@ Commit changes to staging branch and push changes to staging remote.
 ## Deployed
 
 Sync changes from feature branch to master branch. One-time operation.
-After is rady bracnh must be `closed`. This is end of the workign cycle.
+After is ready branch must be `closed`. This is end of the working cycle.
 
 ### Goal
 
@@ -128,9 +128,9 @@ Push to master must be created manually - from IDE or with `git push origin mast
 
 ### Conflict
 
-Resolving of conflicts - use `git add` or `git rm`. When conflict is resoved move to `git rebase --continue`.
+Resolving of conflicts - use `git add` or `git rm`. When conflict is resolved move to `git rebase --continue`.
 
-Use `git status` to check where are the conflicts and on withc step (rebase master to feature branch or rebase feature to master). Most likely conflicts are on first step - rebase master to feature branch.
+Use `git status` to check where are the conflicts and on with step (rebase master to feature branch or rebase feature to master). Most likely conflicts are on first step - rebase master to feature branch.
 
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
