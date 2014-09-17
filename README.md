@@ -9,10 +9,11 @@ When feature is ready - it is merged with master and from there released to live
 
 Create copy of config-changed.sh to config.sh and edit following values:
 
-`WF_REPO` - git remote respository ur
-`WF_PROJECT_ROOT` - directory where project is cloned
+* `WF_REPO` - git remote respository
+* `WF_PROJECT_ROOT` - directory where project is cloned
 
 Tool expects that you have previosly cloned master to your local system.
+
 Tool works with ssh so you need to have setup ssh-key-paris.
 
 `WF_DEBUG` and `WF_VERBOSE` are not used at the moment.
