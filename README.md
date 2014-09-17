@@ -64,7 +64,7 @@ Creates feature branch from master branch.
 
 ### Goal
 ```
-./worflow.sh XXX-001 in-progress
+./workflow.sh XXX-001 in-progress
 ```
 
 * Create branch XXX-001 (if branch is missing on remote and in local repo). Push branch to remote.
@@ -79,7 +79,7 @@ Review merge files before make commit to staging branch.
 ### Goal
 
 ```
-./worflow.sh XXX-001 resolved
+./workflow.sh XXX-001 resolved
 ```
 
 Review cherry-pick changes. If merge is ok - they are ready for commit.
@@ -98,13 +98,13 @@ Changes can be commit from IDE or with `git commit -am "Commit message"
 
 ### Goal
 ```
-./worflow.sh XXX-001 resolved sync
+./workflow.sh XXX-001 resolved sync
 ```
 
 Creates tracking branches and push changes to staging remote.
 
 ```
-./worflow.sh XXX-001 resolved sync -m="Commit message"
+./workflow.sh XXX-001 resolved sync -m="Commit message"
 
 ```
 
@@ -118,7 +118,7 @@ After is rady bracnh must be `closed`. This is end of the workign cycle.
 ### Goal
 
 ```
-./worflow.sh XXX-001 deployed
+./workflow.sh XXX-001 deployed
 ```
 
 Rebase master to feature branch.
