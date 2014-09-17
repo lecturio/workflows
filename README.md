@@ -38,12 +38,12 @@ export WF_VERBOSE=0
 # Branch setup
 
 * master- deployed on `live server`
-** rebase with feature (one time)
+ * rebase with feature (one time)
 * staging- depoyed on `staging server`
 * feature
-** created from master
-** cherry-picked - until feature is approved to staging (multiple times)
-** rebase with master - retrive chages from master (multiple times)
+ * created from master
+ * cherry-picked - until feature is approved to staging (multiple times)
+ * rebase with master - retrive chages from master (multiple times)
 
 # Goals
 
@@ -51,10 +51,10 @@ Tool have following pattern: ./worflow.sh [FEATURE] [GOAL] [OPTION] where:
 
 * FEATURE - XXX-001
 * GOAL
-** in-progress
-** resolved, option sync
-** deployed
-** close - not implemented
+ * in-progress
+ * resolved, option sync
+ * deployed
+ * close - not implemented
 * OPTION - some goals have addtional options like `resolved`
 
 ## In progress
