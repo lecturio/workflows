@@ -69,3 +69,16 @@ function emitgit_is_local_branch() {
 	emit "git show-ref --verify refs/heads/$1" quiet
 	echo $?
 }
+
+#
+# Checks if there pending commits in certain branches
+# $1 - branch to be checked
+#
+emit_failonerror_pending_commits() {
+	PENDING_COMMITS=`emit "git log origin/${1}..${1}"`
+	if [ "$PENDING_COMMITS" != "" ]; then
+		print_err "Local changes need to be push in ${1}"
+		print_build_msg
+		exit 1
+	fi
+}

@@ -2,15 +2,7 @@
 
 print_msg "Sync changes to staging"
 
-PENDING_COMMITS=`emit "git log origin/${WF_TASK}..${WF_TASK}"`
-
-if [ "$PENDING_COMMITS" != "" ]; then
-
-	echo push changes before commit
-	print_err "Local changes needs to be pushed before sync"
-fi
-
-exit 1
+emit_failonerror_pending_commits "$WF_TASK"
 
 function track_feature_branch() {
 	local CURRENT_BRANCH=`emit "git rev-parse --abbrev-ref HEAD"`
