@@ -72,7 +72,7 @@ if [ "$WF_ENV" == "" ]; then
 	emit "git fetch" quiet
 
 	setup_branch "master"
-	setup_branch "feature"
+	setup_branch "$WF_TASK"
 	setup_branch "staging"
 	#setup_master_branch
 	#setup_feature_branch
