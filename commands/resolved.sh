@@ -79,9 +79,7 @@ if [ "$WF_ENV" == "" ]; then
 	emit "git cherry-pick --abort" quiet
 	emit "git fetch" quiet
 
-	setup_branch "master"
-	setup_branch "$WF_TASK"
-	setup_branch "staging"
+	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
 	#setup_master_branch
 	#setup_feature_branch
 	#setup_staging_branch
