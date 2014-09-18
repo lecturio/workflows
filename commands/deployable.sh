@@ -21,7 +21,8 @@ __merge_branch() {
 
 __setup_branch "master"
 
-if [ `emit_is_pending_commits "$WF_TASK"` -eq 0 ]; then 
+PENDING_COMMITS=`emit "git log origin/${WF_TASK}..${WF_TASK}"`
+if [ "$PENDING_COMMITS" == "" ]; then 
 	#TODO either push branch to remote
 	__setup_branch "$WF_TASK"
 fi
