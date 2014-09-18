@@ -2,8 +2,6 @@
 
 emit "git checkout master" quiet
 
-emit_failonerror_pending_commits "$WF_TASK"
-
 # List local or remote branches for task
 # $1 - -r for remote branches
 __git_delete_remote_branch() {
