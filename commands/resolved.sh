@@ -53,6 +53,9 @@ function sync_feature_changes() {
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 }
 
+
+emit_failonerror_pending_commits "$WF_TASK"
+
 if [ "$WF_ENV" == "" ]; then
 	emit "git cherry-pick --abort" quiet
 	emit "git fetch" quiet

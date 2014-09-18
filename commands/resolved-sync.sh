@@ -2,8 +2,6 @@
 
 print_msg "Sync changes to staging"
 
-emit_failonerror_pending_commits "$WF_TASK"
-
 function track_feature_branch() {
 	local CURRENT_BRANCH=`emit "git rev-parse --abbrev-ref HEAD"`
 

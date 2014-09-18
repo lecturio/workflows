@@ -77,7 +77,7 @@ function emitgit_is_local_branch() {
 emit_failonerror_pending_commits() {
 	PENDING_COMMITS=`emit "git log origin/${1}..${1}"`
 	if [ "$PENDING_COMMITS" != "" ]; then
-		print_err "Local changes need to be push in ${1}"
+		print_err "Local changes need to be pushed to ${1}"
 		print_build_msg
 		exit 1
 	fi
