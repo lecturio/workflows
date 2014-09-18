@@ -82,3 +82,8 @@ emit_failonerror_pending_commits() {
 		exit 1
 	fi
 }
+
+emit_is_pending_commits() {
+	PENDING_COMMITS=`emit "git log origin/${1}..${1}"`
+	echo $PENDING_COMMITS
+}
