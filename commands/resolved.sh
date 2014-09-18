@@ -2,7 +2,7 @@
 
 
 function setup_branch() {
-	emit_failonerror "git checkout $1 print_msg
+	emit_failonerror "git checkout $1" print_msg
 	emitgit_sync_branch $1 print_msg
 
 	if [ $? -gt 0 ]; then
