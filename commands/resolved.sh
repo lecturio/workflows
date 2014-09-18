@@ -1,5 +1,16 @@
 #!/bin/bash
 
+
+function setup_branch() {
+	emit_failonerror "git checkout $1 print_msg
+	emitgit_sync_branch $1 print_msg
+
+	if [ $? -gt 0 ]; then
+		print_msg "Resolve conflicts manually"
+		exit 1
+	fi
+}
+
 function setup_master_branch() {
 	emit "git checkout master" quiet
 	emit_failonerror "git pull --rebase origin master" print_msg
@@ -60,8 +71,11 @@ if [ "$WF_ENV" == "" ]; then
 	emit "git cherry-pick --abort" quiet
 	emit "git fetch" quiet
 
-	setup_master_branch
-	setup_feature_branch
-	setup_staging_branch
+	setup_branch "master"
+	setup_branch "feature"
+	setup_branch "staging"
+	#setup_master_branch
+	#setup_feature_branch
+	#setup_staging_branch
 	sync_feature_changes
 fi
