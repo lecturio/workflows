@@ -1,7 +1,15 @@
 #!/bin/bash
 
-
+#
+# Prepare specific branch for merging.
+# $1 - branch name
+#
 function setup_branch() {
+	local BRANCH_EXIST=`emitgit_is_local_branch $1`
+	if [ $BRANCH_EXIST -gt 0 ]; then
+		emit_failonerror "git checkout -b $1 origin/$1"
+	fi
+
 	emit_failonerror "git checkout $1" print_msg
 	emitgit_sync_branch $1 print_msg
 
