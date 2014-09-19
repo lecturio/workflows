@@ -29,7 +29,7 @@ function sync_feature_changes() {
 		local CHERRY_PICK=$TRACK_BRANCH..$WF_TASK
 	fi
 
-	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin --strategy recursive -Xtheirs" quiet
+	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin" quiet
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 }
 
