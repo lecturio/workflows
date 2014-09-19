@@ -31,6 +31,13 @@ export WF_VERBOSE=0
 
 ```
 
+# Install
+
+```bash
+cd workflows
+./install/install.sh
+```
+
 # Git Commands Manifesto
 
 Please check follwoing guide
