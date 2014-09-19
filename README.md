@@ -110,10 +110,10 @@ Use `git status` to review modified files.
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
 
-After resolving run again
+After resolving run:
 
 ```bash
-gitflow XXX-001 resolved
+gitflow XXX-001 resolved sync
 ```
 
 ## Resolved Sync
