@@ -31,6 +31,12 @@ export WF_VERBOSE=0
 
 ```
 
+# Git Commands Manifesto
+
+Please check follwoing guide
+
+https://github.com/lecturio/workflows/wiki/Git-Flow
+
 # Server Setup
 
 * live server
@@ -63,7 +69,7 @@ Tool have following pattern: ./workflow.sh [FEATURE] [GOAL] [OPTION] where:
 Creates feature branch from master branch.
 
 ### Goal
-```
+```bash
 ./workflow.sh XXX-001 in-progress
 ```
 
@@ -78,7 +84,7 @@ Review merge files before make commit to staging branch.
 
 ### Goal
 
-```
+```bash
 ./workflow.sh XXX-001 resolved
 ```
 
@@ -97,7 +103,7 @@ Option to commit changes to staging and push to staging.
 Changes can be commit from IDE or with `git commit -am "Commit message"
 
 ### Goal
-```
+```bash
 ./workflow.sh XXX-001 resolved sync
 ```
 
@@ -117,7 +123,7 @@ After is ready branch must be `closed`. This is end of the working cycle.
 
 ### Goal
 
-```
+```bash
 ./workflow.sh XXX-001 deployed
 ```
 
@@ -128,9 +134,11 @@ Push to master must be created manually - from IDE or with `git push origin mast
 
 ### Conflict
 
+Most likely conflicts are on first step - rebase master to feature branch. Rebase feature branch to master usually are fast-forwarded.
+
 Resolving of conflicts - use `git add` or `git rm`. When conflict is resolved move to `git rebase --continue`.
 
-Use `git status` to check where are the conflicts and on with step (rebase master to feature branch or rebase feature to master). Most likely conflicts are on first step - rebase master to feature branch.
+Use `git status` to check where are the conflicts and on with step (rebase master to feature branch or rebase feature to master).
 
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
