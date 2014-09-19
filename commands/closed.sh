@@ -28,8 +28,7 @@ $NOTICE
 while true
 do
   case $answer in
-   [yY]* ) REMOTE_BRANCEHS=`__git_delete_remote_branch`;
-	   echo git push origin $REMOTE_BRANCEHS
+   [yY]* ) echo git push origin $REMOTE_BRANCEHS
 	   echo git branch -d $LOCAL_BRANCEHS
            break;;
 
