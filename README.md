@@ -74,7 +74,7 @@ Tool have following pattern: ./workflow.sh [FEATURE] [GOAL] [OPTION] where:
  * in-progress
  * resolved, option sync
  * deployed
- * close - not implemented
+ * closed
 * OPTION - some goals have additional options like `resolved`
 
 ## In progress
@@ -162,7 +162,7 @@ Use `git status` to check where are the conflicts and on with step (rebase maste
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
 
-After resolving run again 
+After resolving conflict run again 
 
 ```bash
 gitflow XXX-001 deployable
