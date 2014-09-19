@@ -38,11 +38,17 @@ cd workflows
 ./install/install.sh
 ```
 
+Creates symlink in `/usr/local/bin/gitflow`.
+
+From now on `workflow.sh` command can be replaced with `gitflow`.
+
+You can use `gitflow` in your current project dir.
+
 # Git Commands Manifesto
 
 Please check follwoing guide
 
-https://github.com/lecturio/workflows/wiki/Git-Flow
+https://github.com/lecturio/workflows/wiki/Additional-commands-during-feature-development
 
 # Server Setup
 
@@ -77,7 +83,7 @@ Creates feature branch from master branch.
 
 ### Goal
 ```bash
-./workflow.sh XXX-001 in-progress
+gitflow XXX-001 in-progress
 ```
 
 * Create branch XXX-001 (if branch is missing on remote and in local repo). Push branch to remote.
@@ -92,7 +98,7 @@ Review merge files before make commit to staging branch.
 ### Goal
 
 ```bash
-./workflow.sh XXX-001 resolved
+gitflow XXX-001 resolved
 ```
 
 Review cherry-pick changes. If merge is ok - they are ready for commit.
@@ -111,13 +117,13 @@ Changes can be commit from IDE or with `git commit -am "Commit message"
 
 ### Goal
 ```bash
-./workflow.sh XXX-001 resolved sync
+gitflow XXX-001 resolved sync
 ```
 
 Creates tracking branches and push changes to staging remote.
 
 ```
-./workflow.sh XXX-001 resolved sync -m="Commit message"
+gitflow XXX-001 resolved sync -m="Commit message"
 
 ```
 
@@ -131,7 +137,7 @@ After is ready branch must be `closed`. This is end of the working cycle.
 ### Goal
 
 ```bash
-./workflow.sh XXX-001 deployed
+gitflow XXX-001 deployed
 ```
 
 Rebase master to feature branch.
