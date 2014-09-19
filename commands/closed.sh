@@ -29,7 +29,7 @@ while true
 do
   case $answer in
    [yY]* ) echo git push origin $REMOTE_BRANCEHS
-	   echo git branch -d $LOCAL_BRANCEHS
+	   echo git branch -D $LOCAL_BRANCEHS
            break;;
 
    [nN]* )  exit 0;;
