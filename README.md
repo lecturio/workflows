@@ -168,6 +168,16 @@ After resolving run again
 gitflow XXX-001 deployable
 ```
 
+### Closed
+
+run
+
+```bash
+gitflow XXX-001 closed
+```
+
+script will pop out the code which needs to be executed to delete local and remote branch
+
 # Flow
 
 * Create feature branch from master
