@@ -110,6 +110,12 @@ Use `git status` to review modified files.
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
 
+After resolving run again
+
+```bash
+gitflow XXX-001 resolved
+```
+
 ## Resolved Sync
 
 Option to commit changes to staging and push to staging.
@@ -155,6 +161,12 @@ Use `git status` to check where are the conflicts and on with step (rebase maste
 
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
+
+After resolving run again 
+
+```bash
+gitflow XXX-001 deployable
+```
 
 # Flow
 
