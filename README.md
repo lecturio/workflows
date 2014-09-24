@@ -143,7 +143,7 @@ After is ready branch must be `closed`. This is end of the working cycle.
 ### Goal
 
 ```bash
-gitflow XXX-001 deployed
+gitflow XXX-001 deployable
 ```
 
 Rebase master to feature branch.
