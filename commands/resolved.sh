@@ -41,4 +41,5 @@ if [ "$WF_ENV" == "" ]; then
 
 	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
 	sync_feature_changes
+	print_msg "gitflow $WF_TASK resolved sync"
 fi
