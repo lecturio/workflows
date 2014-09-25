@@ -10,8 +10,8 @@ function setup_branch() {
 		emit_failonerror "git checkout -b $1 origin/$1"
 	fi
 
-	emit_failonerror "git checkout $1" print_msg
-	emitgit_sync_branch $1 print_msg
+	emit_failonerror "git checkout $1"
+	emitgit_sync_branch $1
 
 	if [ $? -gt 0 ]; then
 		print_msg "Resolve conflicts manually"
@@ -36,8 +36,8 @@ function sync_feature_changes() {
 emit_failonerror_pending_commits "$WF_TASK"
 
 if [ "$WF_ENV" == "" ]; then
-	emit "git cherry-pick --abort" quiet
-	emit "git fetch" quiet
+	emit "git cherry-pick --abort"
+	emit "git fetch"
 
 	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
 	sync_feature_changes
