@@ -12,9 +12,9 @@ function emit() {
 		echo "$1 <<<"
 	else
 		if [ "$2" == "quiet" ]; then
-			out=$(eval "$1" 2>&1)
+			local hidden=`eval $1 >/dev/null 2>&1`
 		elif [ "$2" == "print_msg" ]; then
-			out=$(eval "$1" 2>&1)
+			local out=`eval $1 >/dev/null 2>&1`
 			WF_STATUS=$?
 			print_msg "$out"
 		else

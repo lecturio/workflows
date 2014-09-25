@@ -29,15 +29,16 @@ function sync_feature_changes() {
 		local CHERRY_PICK=$TRACK_BRANCH..$WF_TASK
 	fi
 
-	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin" quiet
+	emit "git checkout staging" quiet
+	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin --strategy recursive -Xours"
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 }
 
 emit_failonerror_pending_commits "$WF_TASK"
 
 if [ "$WF_ENV" == "" ]; then
-	emit "git cherry-pick --abort"
-	emit "git fetch"
+	emit "git cherry-pick --abort" quiet
+	emit "git fetch" quiet
 
 	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
 	sync_feature_changes
