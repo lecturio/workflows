@@ -16,6 +16,8 @@ export WF_STATUS=0
 source $WF_DIR/config.sh
 source $WF_DIR/functions/functions.sh
 
+cd $WF_DIR
+check_update
 validate_input_params
 
 out=$(check_github)
