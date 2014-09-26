@@ -188,6 +188,12 @@ script will pop out the code which needs to be executed to delete local and remo
 * Rebase master with feature (end of flow). Start from begging.
 
 
+# Version History
+
+* 0.0.1.RELEASE 
+ * goals - resolved, in-progress, deployable
+ * self update check
+
 #TODO
 
 * `close` goal is not implemented
