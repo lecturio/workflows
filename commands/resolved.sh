@@ -30,7 +30,7 @@ function sync_feature_changes() {
 	fi
 
 	emit "git checkout staging" quiet
-	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin --strategy recursive -Xtheirs"
+	emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin"
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 }
 
