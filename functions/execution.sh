@@ -7,7 +7,6 @@
 # $2 - append print_msg on output 
 #
 function emit() {
-	echo "emit $1"
 	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
 		echo -n "info>>> "
 		echo "$1 <<<"
@@ -25,7 +24,6 @@ function emit() {
 }
 
 function emit_failonerror() {
-	echo "  fail $1"
 	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
 		echo -n "info>>> "
 		echo "$1 <<<"
