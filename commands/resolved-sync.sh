@@ -9,7 +9,7 @@ function track_feature_branch() {
 		emit_failonerror "git checkout $WF_TASK" print_msg
 	fi
 
-	local TRACK_BRANCH=`emit "git branch | grep ${WF_TASK}-track-* | sort -r | head -1"`
+	local TRACK_BRANCH=`emit "git branch -r | grep ${WF_TASK}-track-* | sort -r | head -1"`
 	if [ "${TRACK_BRANCH##*-}" == "" ]; then
 		local TRACK_NUM=1
 	else
