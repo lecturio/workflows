@@ -7,6 +7,7 @@
 # $2 - append print_msg on output 
 #
 function emit() {
+	echo "emit $1"
 	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
 		echo -n "info>>> "
 		echo "$1 <<<"
@@ -24,17 +25,18 @@ function emit() {
 }
 
 function emit_failonerror() {
+	echo "  fail $1"
 	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
 		echo -n "info>>> "
 		echo "$1 <<<"
 	else
 		if [ "$2" == "quiet" ]; then
-			out=$(eval "$1" 2>&1)
+			local hidden=`eval $1 >/dev/null 2>&1`
 			if [ $? -gt 0 ]; then
 				exit 1
 			fi
 		elif [ "$2" == "print_msg" ]; then
-			out=$(eval "$1" 2>&1)
+			local out=`eval $1 >/dev/null 2>&1`
 			if [ $? -gt 0 ]; then
 				print_err "$out"
 				print_msg - line
