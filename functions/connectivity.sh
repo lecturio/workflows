@@ -9,7 +9,7 @@ function check_update() {
 	SELF_UPDATE=`emit "git rev-list --left-right --boundary @{u}..."`
 	
 	if [ "$SELF_UPDATE" ]; then
-		print_err "Update local branch with remote"
+		print_err "Update workflows to the latest version"
 		print_msg "git pull --rebase origin master"
 		exit 1
 	fi
