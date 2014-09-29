@@ -12,7 +12,7 @@ function emit() {
 		echo "$1 <<<"
 	else
 		if [ "$2" == "quiet" ]; then
-			local hidden=`eval $1 >/dev/null 2>&1`
+			eval $1 >/dev/null 2>&1
 		elif [ "$2" == "print_msg" ]; then
 			local out=`eval $1 >/dev/null 2>&1`
 			WF_STATUS=$?
@@ -29,7 +29,7 @@ function emit_failonerror() {
 		echo "$1 <<<"
 	else
 		if [ "$2" == "quiet" ]; then
-			local hidden=`eval $1 >/dev/null 2>&1`
+			eval $1 >/dev/null 2>&1
 			if [ $? -gt 0 ]; then
 				exit 1
 			fi
