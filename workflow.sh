@@ -4,7 +4,7 @@
 export WF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
-if [ "`which readlink`" =! "" ]; then
+if [ "`which readlink`" != "" ]; then
 INSTALLED=`readlink /usr/local/bin/gitflow`
 if [ $INSTALLED != "" ]; then
 	export WF_DIR=`dirname $INSTALLED`
