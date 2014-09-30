@@ -3,9 +3,12 @@
 # Entry point for workflow
 export WF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+
+if [ "`which readlink`" =! "" ]; then
 INSTALLED=`readlink /usr/local/bin/gitflow`
 if [ $INSTALLED != "" ]; then
 	export WF_DIR=`dirname $INSTALLED`
+fi
 fi
 
 export WF_TASK=$1
