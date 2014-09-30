@@ -49,8 +49,8 @@ function print_msg() {
 			do
 				echo -n $1
 			done
-			echo
 		fi
+		echo
 	elif [ "$2" == "error" ]; then
 		echo "[ERROR] $1"
 	else 
