@@ -42,14 +42,15 @@ function validate_input_params() {
 #TODO format properly multi-lines output
 function print_msg() {
 	if [ "$2" == "line" ]; then
-
-		let "width=$(stty size | cut -d ' ' -f 2) - 7"
 		echo -n "[INFO] "
-		for i in $(seq $width) 
-		do
-   			echo -n $1
-		done
-		echo
+		if [ "`which stty`" != "" ]; then
+			let "width=$(stty size | cut -d ' ' -f 2) - 7"
+			for i in $(seq $width) 
+			do
+				echo -n $1
+			done
+			echo
+		fi
 	elif [ "$2" == "error" ]; then
 		echo "[ERROR] $1"
 	else 
