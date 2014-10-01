@@ -11,7 +11,7 @@ COMMANDS=( "in-progress" "resolved" "deployable" "closed" )
 #
 function validate_input_params() {
 	if [[ -z $WF_TASK || -z $WF_COMMAND ]]; then
-		echo "Provide parameters: ./worflow.sh JIRA-001 in-progress"
+		echo "Provide parameters: gitflow JIRA-001 in-progress"
 		echo "feature name (required)"
 		echo "goal (required)"
 		echo "option (optional for goal)"

@@ -8,6 +8,17 @@ if [ $INSTALLED != "" ]; then
 	export WF_DIR=`dirname $INSTALLED`
 fi
 
+# setup completion
+if [[ ! -f ~/.profile ||
+	`cat ~/.profile | grep $WF_DIR/gitflow-completion.sh` == "" ]]; then
+	echo >> ~/.profile
+	echo "if [ -f $WF_DIR/gitflow-completion.sh ]; then" >> ~/.profile
+	echo -e "\t. $WF_DIR/gitflow-completion.sh" >> ~/.profile
+	echo fi >> ~/.profile
+	. ~/.profile
+fi
+
+# export parameters
 export WF_TASK=$1
 export WF_COMMAND=$2
 export WF_ENV=$3
@@ -33,12 +44,12 @@ cd $WF_PROJECT_ROOT
 print_msg "Scanning for tasks..."
 print_msg - line
 
+# global options support
 for i in "$@"
 do
 case $i in
     -m=*|--message=*)
     MESSAGE="${i#*=}"
-
     ;;
     *)
             # unknown option

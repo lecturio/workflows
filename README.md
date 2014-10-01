@@ -187,8 +187,18 @@ script will pop out the code which needs to be executed to delete local and remo
 * Cherry-pick new changes to staging (multiple times)
 * Rebase master with feature (end of flow). Start from begging.
 
+# Completion
+
+When `gitflow` is run for the first time it adds copletion to `~/.profile` file.
 
 # Version History
+
+Please use latest M1 version 0.0.2.M1. 
+
+* 0.0.2.M1
+
+ * Fixed `quiet` executio always to finish with code 0 
+ * Added goal bash auto-completion
 
 * 0.0.1.RELEASE 
  * goals - resolved, in-progress, deployable
