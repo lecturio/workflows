@@ -206,5 +206,5 @@ Please use latest M1 version 0.0.2.M1.
 
 #TODO
 
-* `close` goal is not implemented
+* ~~`close` goal is not implemented ~~
 * `staging` must be called `devel`
