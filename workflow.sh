@@ -8,14 +8,19 @@ if [ $INSTALLED != "" ]; then
 	export WF_DIR=`dirname $INSTALLED`
 fi
 
-# setup completion
-if [[ ! -f ~/.profile ||
-	`cat ~/.profile | grep $WF_DIR/gitflow-completion.sh` == "" ]]; then
-	echo >> ~/.profile
-	echo "if [ -f $WF_DIR/gitflow-completion.sh ]; then" >> ~/.profile
-	echo -e "\t. $WF_DIR/gitflow-completion.sh" >> ~/.profile
-	echo fi >> ~/.profile
-	. ~/.profile
+# Setup auto completion
+STARTUP_SCRIPT=~/.profile
+if [ Linux = "$(uname)" ]; then
+	STARTUP_SCRIPT=~/.bashrc
+fi
+
+if [[ ! -f $STARTUP_SCRIPT ||
+	`cat $STARTUP_SCRIPT | grep $WF_DIR/gitflow-completion.sh` == "" ]]; then
+	echo >> $STARTUP_SCRIPT
+	echo "if [ -f $WF_DIR/gitflow-completion.sh ]; then" >> $STARTUP_SCRIPT
+	echo -e "\t. $WF_DIR/gitflow-completion.sh" >> $STARTUP_SCRIPT
+	echo fi >> $STARTUP_SCRIPT
+	. $STARTUP_SCRIPT
 fi
 
 # export parameters
