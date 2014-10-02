@@ -202,13 +202,15 @@ For linux execute `.  ~/.bashrc`. For other systems `. ~/.profile`.
 * Diverged on resolved with latest changes on feature branch
 
 If you have some simmilar when you run `gitflow XXX-001 resolved` on step where feature branch is updated with its origin you get something similar to this: 
-`
+
+```
 On branch XXX-001
 Your branch and 'origin/XXX-001' have diverged,
 and have 20 and 1 different commit each, respectively.
   (use "git pull" to merge the remote branch into yours)
 
-`
+```
+
 but you have latest changes on remote feature branch.
 
 * `git rebase --abort`
