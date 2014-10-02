@@ -191,6 +191,14 @@ script will pop out the code which needs to be executed to delete local and remo
 
 When `gitflow` is run for the first time it adds copletion to `~/.profile` file.
 
+For linux execute `.  ~/.bashrc`. For other systems `. ~/.profile`.
+
+# FAQ
+
+* Execute `gitflow XXX-001 resolved sync` before `gitflow XXX-001 resolved`
+ * You need to delete latest track branch from local and remote e.g. `git push origin :XXX-001-track-[latest]` and `git branch -d XXX-001-track-[latest]`. `latest`- biggest number 1,2,3 and etc.
+ * Run `gitflow XXX-001 resolved` again
+
 # Version History
 
 Please use latest M1 version 0.0.2.M1. 
