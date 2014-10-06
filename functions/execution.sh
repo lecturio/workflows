@@ -14,9 +14,9 @@ function emit() {
 		if [ "$2" == "quiet" ]; then
 			eval $1 >/dev/null 2>&1
 		elif [ "$2" == "print_msg" ]; then
-			local out=`eval $1 >/dev/null 2>&1`
+			$(eval $1 >$WF_DIR/output.log 2>&1)
 			WF_STATUS=$?
-			print_msg "$out"
+			print_msg "`tail $WF_DIR/output.log`"
 		else
 			eval $1
 		fi
@@ -34,9 +34,10 @@ function emit_failonerror() {
 				exit 1
 			fi
 		elif [ "$2" == "print_msg" ]; then
-			local out=`eval $1 >/dev/null 2>&1`
-			if [ $? -gt 0 ]; then
-				print_err "$out"
+			$(eval $1 >$WF_DIR/output.log 2>&1)
+			WF_STATUS=$?
+			if [ $WF_STATUS -gt 0 ]; then
+				print_err "`tail $WF_DIR/output.log`"
 				print_msg - line
 				print_msg "BUILD FAILURE"
 				print_msg - line

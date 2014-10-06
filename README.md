@@ -199,7 +199,7 @@ For linux execute `.  ~/.bashrc`. For other systems `. ~/.profile`.
  * You need to delete latest track branch from local and remote e.g. `git push origin :XXX-001-track-[latest]` and `git branch -d XXX-001-track-[latest]`. `latest`- biggest number 1,2,3 and etc.
  * Run `gitflow XXX-001 resolved` again
 
-* Diverged on resolved with latest changes on feature branch
+* Resolved with lots of conflicts in feature branch
 
 If you have some simmilar when you run `gitflow XXX-001 resolved` on step where feature branch is updated with its origin you get something similar to this: 
 
