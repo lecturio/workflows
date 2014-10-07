@@ -224,7 +224,7 @@ It seems github needs some time for synchronization.
 
 # Version History
 
-Please use latest M1 version 0.0.2.M2. 
+Please use version 0.0.2.M2. 
 
 * 0.0.2.M2
 
