@@ -9,10 +9,12 @@ _completion() {
 	let _ret && _ret=0
 	opts="in-progress resolved deployable closed"
 
-	#echo $cur :: $prev :: $cword :: $ret >> aa.log
+	if [[ $WF_DEBUG -eq 1 ]]; then
+		echo $cur :: $prev :: $cword :: $ret >> aa.log
+	fi
 
-	if [[ ${cur} == "%%:*" ]]; then
-		COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+	if [[ ${cword} -eq 0 ]]; then
+		COMPREPLY=( $(compgen -W "$(git branch)" ${cur}) )
 	elif [[ $cword -eq 1 ]]; then
 		COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
 	elif [[ $prev == "resolved" ]]; then
