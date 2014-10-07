@@ -239,18 +239,15 @@ It seems github needs some time for synchronization.
 Please use version 0.0.3.M2. 
 
 * 0.0.2.M3
-
  * Autocomplete for remote branches
 
 * 0.0.2.M2
-
  * Fixed `emit` output and usage ot `print_msg`
  * Fixed correct exist status code when `emit print_msg` is used
  * Autocompletion of branches
  * Prune local branches on goal execution
 
 * 0.0.2.M1
-
  * Fixed `quiet` execution always to finish with code 0 
  * Added goal bash auto-completion
 
