@@ -1,6 +1,7 @@
 #!/bin/bash
 
 emit "git fetch" quiet
+emit "git remote prune origin" quiet
 emit "git show-ref --verify refs/heads/$WF_TASK" quiet
 EXISTS_LOCALLY=$?
 EXISTS_REMOTELY=`emit "git branch -r --list origin/${WF_TASK}"`
