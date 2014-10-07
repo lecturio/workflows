@@ -193,6 +193,9 @@ When `gitflow` is run for the first time it adds copletion to `~/.profile` file.
 
 For linux execute `.  ~/.bashrc`. For other systems `. ~/.profile`.
 
+If you lack git-completion you'll miss branches names completion in gitflow as well.
+You can install [git autocompletion]:https://github.com/git/git/blob/master/contrib/completion/git-completion.bash .
+
 # FAQ
 
 * Execute `gitflow XXX-001 resolved sync` before `gitflow XXX-001 resolved`
