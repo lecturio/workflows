@@ -209,7 +209,7 @@ gitflow origin/[tab] #completes remote branches
 
 * Resolved with lots of conflicts in feature branch
 
-If you have some simmilar when you run `gitflow XXX-001 resolved` on step where feature branch is updated with its origin you get something similar to this: 
+If you have some simmilar when you run `gitflow XXX-001 resolved` on step where feature branch is updated with its origin you get this: 
 
 ```
 On branch XXX-001
@@ -221,9 +221,16 @@ and have 20 and 1 different commit each, respectively.
 
 but you have latest changes on remote feature branch.
 
-* `git rebase --abort`
-* wait a while
-* run `gitflow XXX-001 resolved`
+* Solution 1
+ * `git rebase --abort`
+ * wait a while
+ * run `gitflow XXX-001 resolved`
+
+* Solution 2
+ * `git checkout master`
+ * `git branch -D XXX-001`
+ * `gitflow XXX-001 in-progress`
+ * `gitflow XXX-001 resolved`
 
 It seems github needs some time for synchronization.
 
