@@ -14,16 +14,20 @@ _completion() {
 	fi
 
 	if [[ ${cword} -eq 0 ]]; then
-		COMPREPLY=( $(compgen -W "$(git branch)" ${cur}) )
-	elif [[ $cword -eq 1 ]]; then
-		COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
-	elif [[ $prev == "resolved" ]]; then
-		COMPREPLY=( $(compgen -W "sync" ${cur}) )
-	elif [[ $prev == "sync" && $cword == 3 ]]; then
-		COMPREPLY=( $(compgen -W "-m" ${cur}) )
-	fi
+		if [[ $cur == *origin* ]]; then
+			COMPREPLY=( $(compgen -W "$(git branch -r)" -- ${cur}) )
+		else
+			COMPREPLY=( $(compgen -W "$(git branch) origin/" -- ${cur}) )
+		fi
+		elif [[ $cword -eq 1 ]]; then
+			COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+		elif [[ $prev == "resolved" ]]; then
+			COMPREPLY=( $(compgen -W "sync" ${cur}) )
+		elif [[ $prev == "sync" && $cword == 3 ]]; then
+			COMPREPLY=( $(compgen -W "-m" ${cur}) )
+		fi
 
-	return 0
-}
+		return 0
+	}
 
-complete -F _completion -o filenames gitflow /usr/local/bin/gitflow
+	complete -F _completion -o filenames gitflow /usr/local/bin/gitflow

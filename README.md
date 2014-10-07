@@ -196,6 +196,11 @@ For linux execute `.  ~/.bashrc`. For other systems `. ~/.profile`.
 If you lack git-completion you'll miss branches names completion in gitflow as well.
 You can install [git autocompletion](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash).
 
+```bash
+gitflow mas[tab] #completes local branches
+gitflow origin/[tab] #completes remote branches
+```
+
 # FAQ
 
 * Execute `gitflow XXX-001 resolved sync` before `gitflow XXX-001 resolved`
@@ -224,13 +229,18 @@ It seems github needs some time for synchronization.
 
 # Version History
 
-Please use version 0.0.2.M2. 
+Please use version 0.0.3.M2. 
+
+* 0.0.2.M3
+
+ * Autocomplete for remote branches
 
 * 0.0.2.M2
 
  * Fixed `emit` output and usage ot `print_msg`
  * Fixed correct exist status code when `emit print_msg` is used
  * Autocompletion of branches
+ * Prune local branches on goal execution
 
 * 0.0.2.M1
 

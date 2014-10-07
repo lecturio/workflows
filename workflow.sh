@@ -29,6 +29,8 @@ export WF_COMMAND=$2
 export WF_ENV=$3
 export WF_STATUS=0
 
+WF_TASK=`echo $WF_TASK | sed '$s/origin\///'`
+
 source $WF_DIR/config.sh
 source $WF_DIR/functions/functions.sh
 
