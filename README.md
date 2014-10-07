@@ -224,7 +224,13 @@ It seems github needs some time for synchronization.
 
 # Version History
 
-Please use latest M1 version 0.0.2.M1. 
+Please use latest M1 version 0.0.2.M2. 
+
+* 0.0.2.M2
+
+ * Fixed `emit` output and usage ot `print_msg`
+ * Fixed correct exist status code when `emit print_msg` is used
+ * Autocompletion of branches
 
 * 0.0.2.M1
 
