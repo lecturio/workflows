@@ -19,6 +19,8 @@ __merge_branch() {
 	emit_failonerror "git rebase $2"
 }
 
+emit "git remote prune origin" quiet
+
 __setup_branch "master"
 
 PENDING_COMMITS=`emit "git log origin/${WF_TASK}..${WF_TASK}"`

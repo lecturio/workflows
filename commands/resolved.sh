@@ -42,6 +42,7 @@ emit_failonerror_pending_commits "$WF_TASK"
 if [ "$WF_ENV" == "" ]; then
 	emit "git cherry-pick --abort" quiet
 	emit "git fetch" quiet
+	emit "git remote prune origin" quiet
 
 	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
 	sync_feature_changes
