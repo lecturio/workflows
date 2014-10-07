@@ -168,9 +168,9 @@ After resolving conflict run again
 gitflow XXX-001 deployable
 ```
 
-### Closed
+## Closed
 
-run
+### Goal
 
 ```bash
 gitflow XXX-001 closed
@@ -243,5 +243,5 @@ Please use version 0.0.2.M2.
 
 #TODO
 
-* ~~`close` goal is not implemented ~~
+* ~~`closed` goal is not implemented~~
 * `staging` must be called `devel`
