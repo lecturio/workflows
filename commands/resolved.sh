@@ -34,6 +34,7 @@ function sync_feature_changes() {
 	emit "git cherry-pick -n ${CHERRY_PICK}" 
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 	print_msg "Run \"git status\" and check for conflits"
+	print_msg "Run \"git cherry-pick --continue\" after conflict resolution"
 	print_msg "Run \"gitflow $WF_TASK resolved sync -m\" and put commit message"
 }
 
