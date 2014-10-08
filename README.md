@@ -236,21 +236,18 @@ It seems github needs some time for synchronization.
 
 # Version History
 
-Please use version 0.0.3.M2. 
+Please use version 0.0.2.RELEASE
 
-* 0.0.2.M3
+* 0.0.2.RELEASE
  * Autocomplete for remote branches
-
-* 0.0.2.M2
  * Fixed `emit` output and usage ot `print_msg`
  * Fixed correct exist status code when `emit print_msg` is used
  * Autocompletion of branches
  * Prune local branches on goal execution
-
-* 0.0.2.M1
  * Fixed `quiet` execution always to finish with code 0 
  * Added goal bash auto-completion
-
+ * -m="Comment" is -m "Comment" (without equal sign)
+ 
 * 0.0.1.RELEASE 
  * goals - resolved, in-progress, deployable
  * self update check
