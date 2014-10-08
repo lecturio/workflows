@@ -129,7 +129,7 @@ gitflow XXX-001 resolved sync
 Creates tracking branches and push changes to staging remote.
 
 ```
-gitflow XXX-001 resolved sync -m="Commit message"
+gitflow XXX-001 resolved sync -m "Commit message"
 
 ```
 

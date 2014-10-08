@@ -52,16 +52,11 @@ print_msg "Scanning for tasks..."
 print_msg - line
 
 # global options support
-for i in "$@"
-do
-case $i in
-    -m=*|--message=*)
-    MESSAGE="${i#*=}"
+while getopts ":m:" opt; do
+  case $opt in
+    m) MESSAGE="$OPTARG"
     ;;
-    *)
-            # unknown option
-    ;;
-esac
+  esac
 done
 
 source $WF_DIR/commands/${WF_COMMAND}.sh
