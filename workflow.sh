@@ -52,12 +52,19 @@ print_msg "Scanning for tasks..."
 print_msg - line
 
 # global options support
-while getopts ":m:" opt; do
-  case $opt in
-    m) MESSAGE="$OPTARG"
+for i in "$@"
+do
+case $i in
+    -m*|--message*)
+    MESSAGE="${@##*-m}"
     ;;
-  esac
+    *)
+            # unknown option
+    ;;
+esac
 done
+
+MESSAGE=$(echo $MESSAGE | sed '$s/'$WF_TASK' resolved sync //')
 
 source $WF_DIR/commands/${WF_COMMAND}.sh
 if [[ "$WF_COMMAND" == "resolved" && "$WF_ENV" == "sync" ]]; then
