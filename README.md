@@ -247,6 +247,7 @@ Please use version 0.0.2.RELEASE
  * Fixed `quiet` execution always to finish with code 0 
  * Added goal bash auto-completion
  * -m="Comment" is -m "Comment" (without equal sign)
+ * Fixed resolved sync work with tracking branches gt 10
  
 * 0.0.1.RELEASE 
  * goals - resolved, in-progress, deployable
