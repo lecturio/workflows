@@ -21,9 +21,16 @@ function setup_branch() {
 
 # cherry pick changes
 function sync_feature_changes() {
-	local TRACK_BRANCH=`emit "git branch -r | grep ${WF_TASK}-track-* | sort -r | head -1"`
 
-	if [ "$TRACK_BRANCH" == "" ]; then
+	## Duplicated in resolved sync
+	local TRACK_NS="$WF_TASK-track-"
+	local TRACK_NUM=$(emit "git branch -r | grep $TRACK_NS |\
+		sed 's/origin\/$TRACK_NS//' | sort -nr | head -1")
+
+	local TRACK_NUM=$(echo $TRACK_NUM | sed 's/^[ \t]*//')
+	local TRACK_BRANCH=${TRACK_NS}${TRACK_NUM}
+
+	if [ "$TRACK_NUM" == "" ]; then
 		local CHERRY_PICK=origin/master..$WF_TASK
 	else
 		local CHERRY_PICK=$TRACK_BRANCH..$WF_TASK
