@@ -33,7 +33,7 @@ function sync_feature_changes() {
 	if [ "$TRACK_NUM" == "" ]; then
 		local CHERRY_PICK=origin/master..$WF_TASK
 	else
-		local CHERRY_PICK=$TRACK_BRANCH..$WF_TASK
+		local CHERRY_PICK=origin/$TRACK_BRANCH..$WF_TASK
 	fi
 
 	emit "git checkout staging" quiet
