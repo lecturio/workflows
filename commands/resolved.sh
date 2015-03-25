@@ -38,7 +38,7 @@ function sync_feature_changes() {
 
 	emit "git checkout staging" quiet
 	#emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin"
-	emit "git cherry-pick -n ${CHERRY_PICK}" 
+	emit "git cherry-pick -Xignore-all-space -n ${CHERRY_PICK}" 
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
 	print_msg "Run \"git status\" and check for conflits"
 	print_msg "Run \"git cherry-pick --continue\" after conflict resolution"
