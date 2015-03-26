@@ -16,7 +16,7 @@ __setup_branch() {
 #
 __merge_branch() {
 	emit "git checkout $1" quiet
-	emit_failonerror "git rebase $2"
+	emit_failonerror "git rebase -Xignore-all-space $2"
 }
 
 emit "git remote prune origin" quiet
