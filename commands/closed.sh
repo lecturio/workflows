@@ -1,5 +1,6 @@
 #!/bin/bash
 
+emit "git fetch" quiet
 emit "git checkout master" quiet
 
 # List local or remote branches for task
