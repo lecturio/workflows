@@ -7,7 +7,7 @@ emit "git checkout master" quiet
 # $1 - -r for remote branches
 __git_delete_remote_branch() {
 	local BRANCH=""
-	for x in `git branch $1 | grep $WF_TASK`; 
+	for x in `git branch $1 | grep -w $WF_TASK`; 
 	do 
 		local BRANCH="$BRANCH `echo $x | sed 's/\// :/' | sed 's/origin//'`"
 	done
