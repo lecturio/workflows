@@ -14,8 +14,9 @@ else
 	else
 		emit "git checkout -b $WF_TASK origin/master" print_msg
 		emit "git push origin $WF_TASK" print_msg
+		emit "git branch -u origin/$WF_TASK" print_msg
 	fi
-	
+
 fi
 
 emitgit_sync_branch $WF_TASK print_msg

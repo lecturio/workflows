@@ -1,3 +1,4 @@
 config.sh
 *.swp
 output.log
+.DS_Store
