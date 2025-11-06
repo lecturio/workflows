@@ -178,6 +178,24 @@ gitflow XXX-001 closed
 
 script will pop out the code which needs to be executed to delete local and remote branch
 
+## Resync the whole branch on staging again
+
+When staging branch is refreshed (recreated from master), then all not deployed feature branches must be synced again to the new staging branch.
+
+To achive this:
+* all current tracking branches must be deleted
+* the feature branch must be `resolved` in the usual way
+
+### Commands
+Deleting all tracking branches for feature with name `XXX-1234`
+```bash
+gitflow XXX-1234-track closed
+```
+
+This must show only branches ending with `track-#`
+
+After executing by hand the delete branch commands, then the feature branch can be `resolved` without any problems
+
 # Flow
 
 * Create feature branch from master
