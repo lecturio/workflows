@@ -72,6 +72,7 @@ Tool have following pattern: ./workflow.sh [FEATURE] [GOAL] [OPTION] where:
 * FEATURE - XXX-001
 * GOAL
  * in-progress
+ * pr
  * resolved, option sync
  * deployed
  * closed
@@ -89,6 +90,19 @@ gitflow XXX-001 in-progress
 * Create branch XXX-001 (if branch is missing on remote and in local repo). Push branch to remote.
 * Switch branch from local or checkout from remote.
 * Update branch from remote feature branch.
+
+
+## pr
+
+Prints the GitHub compare URL to open a pull request from the feature branch into `master`. Does not run any git commands; the link is derived from `WF_TASK` and `WF_REPO` in `config.sh`.
+
+### Goal
+
+```bash
+gitflow XXX-001 pr
+```
+
+* Output is a single line: `https://github.com/<org>/<repo>/compare/master...XXX-001?expand=1` (opens the new pull request flow in the browser when followed).
 
 
 ## Resolved

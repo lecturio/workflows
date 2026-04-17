@@ -4,7 +4,7 @@
 source $WF_DIR/functions/connectivity.sh
 source $WF_DIR/functions/execution.sh
 
-COMMANDS=( "in-progress" "resolved" "deployable" "closed" )
+COMMANDS=( "in-progress" "resolved" "deployable" "closed" "pr" )
 
 #
 # Validation of input parameters

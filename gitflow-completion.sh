@@ -7,7 +7,7 @@ _completion() {
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	let cword=COMP_CWORD-1
 	let _ret && _ret=0
-	opts="in-progress resolved deployable closed"
+	opts="in-progress resolved deployable closed pr"
 
 	if [[ $WF_DEBUG -eq 1 ]]; then
 		echo $cur :: $prev :: $cword :: $ret >> aa.log
