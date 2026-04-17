@@ -43,7 +43,11 @@ function validate_input_params() {
 function print_msg() {
 	if [ "$2" == "line" ]; then
 
-		let "width=$(stty size | cut -d ' ' -f 2) - 7"
+		if [ -t 0 ]; then
+			let "width=$(stty size | cut -d ' ' -f 2) - 7"
+		else
+			let "width=${COLUMNS:-80} - 7"
+		fi
 		echo -n "[INFO] "
 		for i in $(seq $width) 
 		do
