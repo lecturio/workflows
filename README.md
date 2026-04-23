@@ -212,6 +212,40 @@ After executing by hand the delete branch commands, then the feature branch can 
 
 # Flow
 
+Overview of how `master`, `staging`, and the feature branch `BRANCH_NAME` evolve. The diagram uses [Mermaid GitGraph](https://mermaid.js.org/syntax/gitgraph.html) syntax; render it in GitHub, VS Code, or any Mermaid-capable viewer.
+
+```mermaid
+%%{init: { 'gitGraph': { 'mainBranchName': 'master' } }}%%
+gitGraph
+  commit id: "m0" tag: "master (live)"
+  branch staging
+  checkout staging
+  checkout master
+  branch "BRANCH_NAME"
+  commit id: "f1" tag: "in-progress"
+  checkout staging
+  cherry-pick id: "f1" tag: "resolved sync -m"
+  checkout "BRANCH_NAME"
+  commit id: "f2" tag: "in-progress"
+  checkout staging
+  cherry-pick id: "f2" tag: "resolved sync -m"
+  checkout "BRANCH_NAME"
+  commit id: "f3" type: HIGHLIGHT tag: "pr"
+  checkout master
+  merge "BRANCH_NAME" id: "m1" tag: "deployable"
+```
+
+1. **`gitflow BRANCH_NAME in-progress`** — create the feature branch from `master` and push it (`f1` starts this line of work).
+2. **`git add` / `git commit` / `git push`** — move work forward on `BRANCH_NAME` (further commits on the feature branch before each cherry-pick).
+3. **`gitflow BRANCH_NAME resolved`** — bring changes onto `staging` (shown as **cherry-pick** onto `staging`).
+4. If there are conflicts, resolve them, commit, then **`gitflow BRANCH_NAME resolved sync -m "…"`** to update remote `staging`.
+5. If more work is needed, **`gitflow BRANCH_NAME in-progress`** again and repeat push to `staging` via `resolved` / `resolved sync` as above (`f2` and second cherry-pick).
+6. When acceptance is met on `staging`, **`gitflow BRANCH_NAME pr`** prints the GitHub compare URL to open a PR into `master` (script only; the highlighted node in the graph marks that milestone, not a required commit).
+7. **`gitflow BRANCH_NAME deployable`**, resolve conflicts if any, then **`git push`** to publish `master` (`m1` merge).
+8. **`gitflow BRANCH_NAME closed`** — prints the commands to delete local and remote branches; run those by hand (not shown as graph operations).
+
+Key features
+
 * Create feature branch from master
 * Push feature as remote feature branch
 * Working on the feature (commit and push)
