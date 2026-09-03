@@ -30,9 +30,23 @@ export WF_ENV=$3
 export WF_STATUS=0
 
 WF_TASK=`echo $WF_TASK | sed '$s/origin\///'`
+WF_GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
-source $WF_DIR/config.sh
+# config.sh is optional - it only carries the debug flags
+if [ -f "$WF_DIR/config.sh" ]; then
+	source "$WF_DIR/config.sh"
+fi
+: "${WF_DEBUG:=0}"
+: "${WF_VERBOSE:=0}"
+export WF_DEBUG
+export WF_VERBOSE
+
 source $WF_DIR/functions/functions.sh
+
+if [ -z "$WF_GIT_ROOT" ]; then
+	print_err "gitflow must be run inside a project clone"
+	exit 1
+fi
 
 cd $WF_DIR
 check_update
@@ -45,8 +59,20 @@ if [ $? -gt 1 ]; then
 	exit 1
 fi
 
-cd $WF_PROJECT_ROOT
-#TODO if is missing - clone it
+cd "$WF_GIT_ROOT"
+
+WF_REPO=$(git config --get remote.origin.url)
+if [ -z "$WF_REPO" ]; then
+	print_err "Could not read origin URL from the current repository"
+	exit 1
+fi
+export WF_REPO
+
+load_gitflow "$WF_GIT_ROOT/.gitflow"
+: "${WF_PROD_BRANCH:=master}"
+: "${WF_STAGING_BRANCH:=staging}"
+export WF_PROD_BRANCH
+export WF_STAGING_BRANCH
 
 print_msg "Scanning for tasks..."
 print_msg - line

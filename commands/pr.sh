@@ -13,5 +13,5 @@ else
 	exit 1
 fi
 
-PR_URL="https://github.com/${GH_OWNER}/${GH_REPO}/compare/master...${WF_TASK}?expand=1"
+PR_URL="https://github.com/${GH_OWNER}/${GH_REPO}/compare/${WF_PROD_BRANCH}...${WF_TASK}?expand=1"
 print_msg "$PR_URL"

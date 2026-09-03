@@ -1,6 +1,6 @@
 #!/bin/bash
 
-print_msg "Sync changes to staging"
+print_msg "Sync changes to $WF_STAGING_BRANCH"
 
 # setups tracking branch with recent changes on feature branch
 function track_feature_branch() {
@@ -34,8 +34,8 @@ fi
 
 # init functions
 track_feature_branch
-setup_branch "staging"
+setup_branch "$WF_STAGING_BRANCH"
 
 if [ $WF_STATUS -eq 0 ]; then
-	print_msg "git push staging"
+	print_msg "git push $WF_STAGING_BRANCH"
 fi

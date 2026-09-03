@@ -1,0 +1,5 @@
+# Copy to .gitflow at the repository root and uncomment the keys you need.
+# Unset keys keep the tool defaults: production master, staging staging.
+
+# WF_PROD_BRANCH=main
+# WF_STAGING_BRANCH=devel

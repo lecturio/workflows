@@ -1,7 +1,8 @@
 #!/bin/bash
 
 emit "git fetch" quiet
-emit "git checkout master" quiet
+require_origin_branch "$WF_PROD_BRANCH"
+emit "git checkout $WF_PROD_BRANCH" quiet
 
 # List local or remote branches for task
 # $1 - -r for remote branches

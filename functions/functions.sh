@@ -74,3 +74,56 @@ function print_build_msg() {
 	fi
 	print_msg - line
 }
+
+#
+# Parse repo-level .gitflow (dotenv KEY=value).
+# $1 - path to .gitflow
+#
+function load_gitflow() {
+	local GITFLOW_FILE="$1"
+	if [ ! -f "$GITFLOW_FILE" ]; then
+		return 0
+	fi
+
+	local line key value
+	while IFS= read -r line || [ -n "$line" ]; do
+		line="${line%$'\r'}"
+		[[ "$line" =~ ^[[:space:]]*$ ]] && continue
+		[[ "$line" =~ ^[[:space:]]*# ]] && continue
+
+		if [[ ! "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+			print_msg "Ignoring invalid line in .gitflow: $line"
+			continue
+		fi
+
+		key="${BASH_REMATCH[1]}"
+		value="${BASH_REMATCH[2]}"
+		if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+			value="${BASH_REMATCH[1]}"
+		elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+			value="${BASH_REMATCH[1]}"
+		fi
+
+		case "$key" in
+			WF_PROD_BRANCH|WF_STAGING_BRANCH)
+				export "$key=$value"
+				;;
+			*)
+				print_msg "Unrecognized key in .gitflow: $key"
+				;;
+		esac
+	done < "$GITFLOW_FILE"
+}
+
+#
+# Fail when a configured branch is missing on origin.
+# $1 - branch name
+#
+function require_origin_branch() {
+	emit "git rev-parse --verify --quiet origin/$1" quiet
+	if [ $? -ne 0 ]; then
+		print_err "Configured branch origin/$1 does not exist"
+		print_build_msg
+		exit 1
+	fi
+}

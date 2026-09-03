@@ -31,12 +31,12 @@ function sync_feature_changes() {
 	local TRACK_BRANCH=${TRACK_NS}${TRACK_NUM}
 
 	if [ "$TRACK_NUM" == "" ]; then
-		local CHERRY_PICK=origin/master..$WF_TASK
+		local CHERRY_PICK=origin/$WF_PROD_BRANCH..$WF_TASK
 	else
 		local CHERRY_PICK=origin/$TRACK_BRANCH..$WF_TASK
 	fi
 
-	emit "git checkout staging" quiet
+	emit "git checkout $WF_STAGING_BRANCH" quiet
 	#emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin"
 	emit "git cherry-pick -Xignore-all-space -n ${CHERRY_PICK}" 
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
@@ -52,7 +52,9 @@ if [ "$WF_ENV" == "" ]; then
 	emit "git fetch" quiet
 	emit "git remote prune origin" quiet
 
-	setup_branch "master" && setup_branch "$WF_TASK" && setup_branch "staging"
+	require_origin_branch "$WF_PROD_BRANCH"
+	require_origin_branch "$WF_STAGING_BRANCH"
+	setup_branch "$WF_PROD_BRANCH" && setup_branch "$WF_TASK" && setup_branch "$WF_STAGING_BRANCH"
 	sync_feature_changes
 	print_msg "gitflow $WF_TASK resolved sync"
 fi
