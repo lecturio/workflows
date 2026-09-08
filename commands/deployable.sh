@@ -19,6 +19,7 @@ __merge_branch() {
 	emit_failonerror "git rebase -Xignore-all-space $2"
 }
 
+emit "git fetch" quiet
 emit "git remote prune origin" quiet
 
 require_origin_branch "$WF_PROD_BRANCH"
