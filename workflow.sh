@@ -43,6 +43,12 @@ export WF_VERBOSE
 
 source $WF_DIR/functions/functions.sh
 
+# "self" is a reserved word in the ticket slot - it addresses the tool itself,
+# so it runs before the update check and without needing a project clone
+if [ "$WF_TASK" == "self" ]; then
+	handle_self_command
+fi
+
 if [ -z "$WF_GIT_ROOT" ]; then
 	print_err "gitflow must be run inside a project clone"
 	exit 1

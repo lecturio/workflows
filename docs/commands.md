@@ -12,6 +12,9 @@ stripped, so tab-completing a remote branch works. The name has to match
 `STAGE` is one of `in-progress`, `resolved`, `deployable`, `closed`, `pr`.
 `OPTION` is only ever `sync`, for `resolved`. `-m` applies to `resolved sync`.
 
+`self` is a reserved word in the ticket slot: it addresses the tool itself, so it
+can never be a ticket. See [tool commands](#tool-commands).
+
 Every run does the same preflight before the stage: fetches this tool's own clone
 and stops if it is behind its remote, checks `ssh -T git@github.com`, requires the
 current directory to be inside a git clone, reads that repo's `origin` URL, loads
@@ -175,6 +178,44 @@ Branches are matched with `git branch | grep -w <TICKET>`, so passing a prefix
 narrows the deletion: `gitflow ABC-123-track closed` removes the tracking branches
 and leaves `ABC-123` in place. That is the first half of the
 [staging re-sync](troubleshooting.md#staging-was-recreated).
+
+Tool commands
+-------------
+
+`self` in the ticket slot means "the tool itself" rather than a ticket, and its
+only verb is `update`:
+
+```bash
+gitflow self update
+```
+
+It runs `git pull --rebase` in the tool's own clone, following whatever upstream
+that clone's current branch tracks - the same ref the update check compares
+against. Being already current is a no-op that succeeds. It works from any
+directory, needs no project clone, and is the one command the update check does
+not gate, since it exists to clear that check.
+
+It also reports unpushed local commits, because the check fires on any divergence
+from the upstream and not only on being behind. Without that line an update looks
+successful while the next command still refuses to run:
+
+```
+[INFO] 1 local commit(s) not on origin/master - push or drop them or the update check keeps failing
+```
+
+The message names the branch's actual upstream, which need not be on `origin`.
+
+A modified worktree stops the update with git's own message; nothing is changed.
+
+Anything else after `self` - an unknown word, a stage name, or nothing at all -
+gets a single message and exit 1:
+
+```
+[ERROR] "self" is a reserved word and can only be used as: gitflow self update
+```
+
+That covers `gitflow self in-progress` too, so no unreachable branch named `self`
+can be created through the tool.
 
 Variables
 ---------

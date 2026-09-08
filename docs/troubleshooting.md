@@ -6,7 +6,7 @@ Error messages
 
 | Message | Cause | Fix |
 | --- | --- | --- |
-| `[ERROR] Update workflows to the latest version` | the tool's own clone differs from its remote: behind it, or carrying unpushed local commits of your own | `git -C /path/to/workflows pull --rebase origin master`, then push or move aside any local commits |
+| `[ERROR] Update workflows to the latest version` | the tool's own clone differs from its remote: behind it, or carrying unpushed local commits of your own | `gitflow self update`, then push or move aside any local commits it reports |
 | `Add your private key ssh-add [path to pk].` | `ssh -T git@github.com` failed | load your key, e.g. `ssh-add ~/.ssh/id_ed25519`, and check you can reach github.com |
 | `[ERROR] gitflow must be run inside a project clone` | the current directory is not inside a git repository | `cd` into the project you want to act on |
 | `[ERROR] Could not read origin URL from the current repository` | the project has no `origin` remote | `git remote add origin …` |

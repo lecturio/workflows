@@ -10,7 +10,7 @@ function check_update() {
 	
 	if [ "$SELF_UPDATE" ]; then
 		print_err "Update workflows to the latest version"
-		print_msg "git pull --rebase origin master"
+		print_msg "gitflow self update"
 		exit 1
 	fi
 }

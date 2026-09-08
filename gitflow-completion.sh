@@ -8,6 +8,7 @@ _completion() {
 	let cword=COMP_CWORD-1
 	let _ret && _ret=0
 	opts="in-progress resolved deployable closed pr"
+	self_opts="update"
 
 	if [[ $WF_DEBUG -eq 1 ]]; then
 		echo $cur :: $prev :: $cword :: $ret >> aa.log
@@ -15,16 +16,20 @@ _completion() {
 
 	if [[ ${cword} -eq 0 ]]; then
 		if [[ $cur == *origin* ]]; then
-			COMPREPLY=( $(compgen -W "$(git branch -r)" -- ${cur}) )
+			COMPREPLY=( $(compgen -W "$(git branch -r 2>/dev/null)" -- "${cur}") )
 		else
-			COMPREPLY=( $(compgen -W "$(git branch) origin/" -- ${cur}) )
+			COMPREPLY=( $(compgen -W "$(git branch 2>/dev/null) origin/ self" -- "${cur}") )
 		fi
 		elif [[ $cword -eq 1 ]]; then
-			COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+			if [[ $prev == "self" ]]; then
+				COMPREPLY=( $(compgen -W "${self_opts}" -- "${cur}") )
+			else
+				COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+			fi
 		elif [[ $prev == "resolved" ]]; then
-			COMPREPLY=( $(compgen -W "sync" ${cur}) )
+			COMPREPLY=( $(compgen -W "sync" -- "${cur}") )
 		elif [[ $prev == "sync" && $cword == 3 ]]; then
-			COMPREPLY=( $(compgen -W "-m" ${cur}) )
+			COMPREPLY=( $(compgen -W "-m" -- "${cur}") )
 		fi
 
 		return 0
