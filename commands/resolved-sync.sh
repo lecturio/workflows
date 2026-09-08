@@ -1,6 +1,6 @@
 #!/bin/bash
 
-print_msg "Sync changes to staging"
+print_msg "Sync changes to $WF_STAGING_BRANCH"
 
 # setups tracking branch with recent changes on feature branch
 function track_feature_branch() {
@@ -32,10 +32,13 @@ if [ "$MESSAGE" != "" ]; then
 	emit_failonerror "git commit -am \"$MESSAGE\"" print_msg
 fi
 
+refresh_origin
+require_origin_branch "$WF_STAGING_BRANCH"
+
 # init functions
 track_feature_branch
-setup_branch "staging"
+setup_branch "$WF_STAGING_BRANCH"
 
 if [ $WF_STATUS -eq 0 ]; then
-	print_msg "git push staging"
+	print_msg "git push $WF_STAGING_BRANCH"
 fi

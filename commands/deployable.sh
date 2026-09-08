@@ -19,9 +19,9 @@ __merge_branch() {
 	emit_failonerror "git rebase -Xignore-all-space $2"
 }
 
-emit "git remote prune origin" quiet
-
-__setup_branch "master"
+refresh_origin
+require_origin_branch "$WF_PROD_BRANCH"
+__setup_branch "$WF_PROD_BRANCH"
 
 PENDING_COMMITS=`emit "git log origin/${WF_TASK}..${WF_TASK}"`
 if [ "$PENDING_COMMITS" == "" ]; then 
@@ -29,4 +29,4 @@ if [ "$PENDING_COMMITS" == "" ]; then
 	__setup_branch "$WF_TASK"
 fi
 
-__merge_branch "$WF_TASK" master && __merge_branch master "$WF_TASK"
+__merge_branch "$WF_TASK" "$WF_PROD_BRANCH" && __merge_branch "$WF_PROD_BRANCH" "$WF_TASK"

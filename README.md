@@ -2,34 +2,49 @@ Workflows
 =========
 
 Git workflow for application with staging and live environment.
-All features are merged with staging branch and from there- released on staging system.
-When feature is ready - it is merged with master and from there released to live system.
+All features are merged with the staging branch (`WF_STAGING_BRANCH`, default `staging`) and from there- released on staging system.
+When feature is ready - it is merged with the production branch (`WF_PROD_BRANCH`, default `master`) and from there released to live system.
 
 # Usage
 
-Create copy of config-empty.sh to config.sh and edit following values:
+Run `gitflow` from inside the target clone (any subdirectory). The tool acts on that repository - the remote and the repository root are read from it, so there is nothing to configure per project.
 
-* `WF_REPO` - git remote respository
-* `WF_PROJECT_ROOT` - directory where project is cloned
+Tool expects that you have previously cloned the production branch to your local system.
 
-Tool expects that you have previosly cloned master to your local system.
+Tool works with SSH so you need to have set up SSH key pairs.
 
-Tool works with ssh so you need to have setup ssh-key-paris.
-
-`WF_DEBUG` and `WF_VERBOSE` are not used at the moment.
-
-You need to get something like that:
+`config.sh` is optional. Create a copy of sample.config.sh as config.sh only if you want the debug flags; without it both default to `0`:
 
 ```
 #!/bin/bash
 ## configuration values
 
-export WF_REPO=git@github.com:lecturio/workflows.git
-export WF_PROJECT_ROOT="/projects/workflows"
 export WF_DEBUG=0
 export WF_VERBOSE=0
 
 ```
+
+* `WF_DEBUG` - set to `1` for a dry-run: print each git command and do not execute it
+* `WF_VERBOSE` - not used at the moment
+
+## Per-repo branch names
+
+Copy [sample.dot.gitflow](sample.dot.gitflow) to `.gitflow` at the **project** repository root (committed so the team shares names). The file is dotenv `KEY=value`; unset keys keep the defaults.
+
+```
+# lecturio/some-app
+WF_PROD_BRANCH=main
+WF_STAGING_BRANCH=devel
+```
+
+* `WF_PROD_BRANCH` — branch deployed to the live server (default `master`)
+* `WF_STAGING_BRANCH` — branch deployed to the staging server (default `staging`)
+
+Partial files are valid. Setting only `WF_PROD_BRANCH=main` still uses staging `staging`. Repos that already use `master` and `staging` need no `.gitflow`.
+
+Keys present in `.gitflow` override the environment. Keys omitted from the file (or when there is no file) use the environment if set, otherwise the defaults. Trailing spaces on values are ignored.
+
+The `pr` goal derives the GitHub compare URL from the current repo's `origin` remote.
 
 # Install
 
@@ -57,13 +72,13 @@ https://github.com/lecturio/workflows/wiki/Additional-commands-during-feature-de
 
 # Branch setup
 
-* master- deployed on `live server`
+* production branch (`WF_PROD_BRANCH`, default `master`)- deployed on `live server`
  * rebase with feature (one time)
-* staging- deployed on `staging server`
+* staging branch (`WF_STAGING_BRANCH`, default `staging`)- deployed on `staging server`
 * feature
- * created from master
+ * created from the production branch
  * cherry-picked - until feature is approved to staging (multiple times)
- * rebase with master - retrieve changes from master (multiple times)
+ * rebase with the production branch - retrieve changes from production (multiple times)
 
 # Goals
 
@@ -80,7 +95,7 @@ Tool have following pattern: ./workflow.sh [FEATURE] [GOAL] [OPTION] where:
 
 ## In progress
 
-Creates feature branch from master branch.
+Creates feature branch from the production branch.
 
 ### Goal
 ```bash
@@ -139,7 +154,7 @@ Commit changes to staging branch and push changes to staging remote.
 
 ## PR
 
-Prints the GitHub compare URL to open a pull request from the feature branch into `master`. Does not run any git commands; the link is derived from `WF_TASK` and `WF_REPO` in `config.sh`.
+Prints the GitHub compare URL to open a pull request from the feature branch into the production branch (`WF_PROD_BRANCH`, default `master`). Does not run any git commands; the link is derived from `WF_TASK` and the current repo's `origin` URL.
 
 ### Goal
 
@@ -147,11 +162,11 @@ Prints the GitHub compare URL to open a pull request from the feature branch int
 gitflow XXX-001 pr
 ```
 
-* Output is a single line: `https://github.com/<org>/<repo>/compare/master...XXX-001?expand=1` (opens the new pull request flow in the browser when followed).
+* Output is a single line: `https://github.com/<org>/<repo>/compare/<prod-branch>...XXX-001?expand=1` (opens the new pull request flow in the browser when followed). For the default production branch that is `.../compare/master...XXX-001?expand=1`. Slashes in branch names are percent-encoded (`release/1.2` → `release%2F1.2`).
 
 ## Deployed
 
-Sync changes from feature branch to master branch. One-time operation.
+Sync changes from feature branch to the production branch. One-time operation.
 After is ready branch must be `closed`. This is end of the working cycle.
 
 ### Goal
@@ -160,18 +175,18 @@ After is ready branch must be `closed`. This is end of the working cycle.
 gitflow XXX-001 deployable
 ```
 
-Rebase master to feature branch.
-Rebase feature branch to master branch.
+Rebase the production branch to the feature branch.
+Rebase the feature branch to the production branch.
 Review your changes.
-Push to master must be created manually - from IDE or with `git push origin master`.
+Push to the production branch must be created manually - from IDE or with `git push origin <prod-branch>`.
 
 ### Conflict
 
-Most likely conflicts are on first step - rebase master to feature branch. Rebase feature branch to master usually are fast-forwarded.
+Most likely conflicts are on first step - rebase production to feature branch. Rebase feature branch to production usually are fast-forwarded.
 
 Resolving of conflicts - use `git add` or `git rm`. When conflict is resolved move to `git rebase --continue`.
 
-Use `git status` to check where are the conflicts and on with step (rebase master to feature branch or rebase feature to master).
+Use `git status` to check where are the conflicts and on with step (rebase production to feature branch or rebase feature to production).
 
 Abort - restart goal.
 Changes - `git log` to ensure status of your changes.
@@ -194,7 +209,7 @@ script will pop out the code which needs to be executed to delete local and remo
 
 ## Resync the whole branch on staging again
 
-When staging branch is refreshed (recreated from master), then all not deployed feature branches must be synced again to the new staging branch.
+When the staging branch is refreshed (recreated from the production branch), then all not deployed feature branches must be synced again to the new staging branch.
 
 To achive this:
 * all current tracking branches must be deleted
@@ -212,7 +227,7 @@ After executing by hand the delete branch commands, then the feature branch can 
 
 # Flow
 
-Overview of how `master`, `staging`, and the feature branch `BRANCH_NAME` evolve. The diagram uses [Mermaid GitGraph](https://mermaid.js.org/syntax/gitgraph.html) syntax; render it in GitHub, VS Code, or any Mermaid-capable viewer.
+Overview of how the production branch (`master` in this diagram), staging, and the feature branch `BRANCH_NAME` evolve. The diagram uses the default branch names; a repo may override them in `.gitflow`. The diagram uses [Mermaid GitGraph](https://mermaid.js.org/syntax/gitgraph.html) syntax; render it in GitHub, VS Code, or any Mermaid-capable viewer.
 
 ```mermaid
 %%{init: { 'gitGraph': { 'mainBranchName': 'master' } }}%%
@@ -235,23 +250,23 @@ gitGraph
   merge "BRANCH_NAME" id: "m1" tag: "deployable"
 ```
 
-1. **`gitflow BRANCH_NAME in-progress`** — create the feature branch from `master` and push it (`f1` starts this line of work).
+1. **`gitflow BRANCH_NAME in-progress`** — create the feature branch from the production branch (`master` by default) and push it (`f1` starts this line of work).
 2. **`git add` / `git commit` / `git push`** — move work forward on `BRANCH_NAME` (further commits on the feature branch before each cherry-pick).
-3. **`gitflow BRANCH_NAME resolved`** — bring changes onto `staging` (shown as **cherry-pick** onto `staging`).
-4. If there are conflicts, resolve them, commit, then **`gitflow BRANCH_NAME resolved sync -m "…"`** to update remote `staging`.
-5. If more work is needed, **`gitflow BRANCH_NAME in-progress`** again and repeat push to `staging` via `resolved` / `resolved sync` as above (`f2` and second cherry-pick).
-6. When acceptance is met on `staging`, **`gitflow BRANCH_NAME pr`** prints the GitHub compare URL to open a PR into `master` (script only; the highlighted node in the graph marks that milestone, not a required commit).
-7. **`gitflow BRANCH_NAME deployable`**, resolve conflicts if any, then **`git push`** to publish `master` (`m1` merge).
+3. **`gitflow BRANCH_NAME resolved`** — bring changes onto the staging branch (shown as **cherry-pick** onto `staging`).
+4. If there are conflicts, resolve them, commit, then **`gitflow BRANCH_NAME resolved sync -m "…"`** to update remote staging.
+5. If more work is needed, **`gitflow BRANCH_NAME in-progress`** again and repeat push to staging via `resolved` / `resolved sync` as above (`f2` and second cherry-pick).
+6. When acceptance is met on staging, **`gitflow BRANCH_NAME pr`** prints the GitHub compare URL to open a PR into the production branch (script only; the highlighted node in the graph marks that milestone, not a required commit).
+7. **`gitflow BRANCH_NAME deployable`**, resolve conflicts if any, then **`git push`** to publish the production branch (`m1` merge).
 8. **`gitflow BRANCH_NAME closed`** — prints the commands to delete local and remote branches; run those by hand (not shown as graph operations).
 
 Key features
 
-* Create feature branch from master
+* Create feature branch from the production branch
 * Push feature as remote feature branch
 * Working on the feature (commit and push)
-* Rebase with master during feature development to be kept up to date
+* Rebase with the production branch during feature development to be kept up to date
 * Cherry-pick new changes to staging (multiple times)
-* Rebase master with feature (end of flow). Start from begging.
+* Rebase the production branch with the feature (end of flow). Start from begging.
 
 # Completion
 
@@ -293,7 +308,7 @@ but you have latest changes on remote feature branch.
  * run `gitflow XXX-001 resolved`
 
 * Solution 2
- * `git checkout master`
+ * `git checkout master` (or your `WF_PROD_BRANCH`)
  * `git branch -D XXX-001`
  * `gitflow XXX-001 in-progress`
  * `gitflow XXX-001 resolved`
@@ -302,7 +317,14 @@ It seems github needs some time for synchronization.
 
 # Version History
 
-Please use version 0.0.2.RELEASE
+Please use version 0.0.3.RELEASE
+
+* 0.0.3.RELEASE
+ * `gitflow` acts on the clone of the current directory
+ * Optional repo `.gitflow` overrides production (`WF_PROD_BRANCH`) and staging (`WF_STAGING_BRANCH`) branch names
+ * `pr` compare URL uses the current repo's `origin` (branch names percent-encoded)
+ * `config.sh` is optional and no longer holds `WF_REPO` or `WF_PROJECT_ROOT`
+ * Templates renamed to `sample.config.sh` and `sample.dot.gitflow`
 
 * 0.0.2.RELEASE
  * Autocomplete for remote branches
@@ -322,4 +344,4 @@ Please use version 0.0.2.RELEASE
 #TODO
 
 * ~~`closed` goal is not implemented~~
-* `staging` must be called `devel`
+* ~~`staging` must be called `devel`~~ (set `WF_STAGING_BRANCH` in `.gitflow`)
