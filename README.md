@@ -27,6 +27,12 @@ gitflow ABC-123 deployable    # fold the ticket into production
 gitflow ABC-123 closed        # delete the ticket branches
 ```
 
+One further command acts on the tool itself rather than on a ticket:
+
+```bash
+gitflow self update           # pull the newest gitflow into your clone
+```
+
 Requirements
 ------------
 
@@ -60,7 +66,7 @@ Every run compares this clone with its own remote and stops if the two differ in
 either direction, so keep it up to date and free of local commits:
 
 ```bash
-git -C /path/to/workflows pull --rebase origin master
+gitflow self update
 ```
 
 Run `gitflow` from anywhere inside the project you want it to act on. It reads the

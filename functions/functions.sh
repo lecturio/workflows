@@ -185,3 +185,34 @@ function require_origin_branch() {
 		exit 1
 	fi
 }
+
+#
+# "self" is reserved in the ticket slot: it addresses the tool itself, never a
+# ticket. Called before check_update and before the project-clone check, and
+# always exits.
+#
+function handle_self_command() {
+	if [ "$WF_COMMAND" != "update" ] || [ -n "$WF_ENV" ]; then
+		WF_STATUS=1
+		print_err "\"self\" is a reserved word and can only be used as: gitflow self update"
+		print_build_msg
+		exit 1
+	fi
+
+	cd "$WF_DIR" || exit 1
+	print_msg "Updating $WF_DIR"
+	emit "git pull --rebase"
+	if [ $? -gt 0 ]; then
+		WF_STATUS=1
+		print_build_msg
+		exit 1
+	fi
+
+	local AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null)
+	if [ "${AHEAD:-0}" -gt 0 ]; then
+		print_msg "$AHEAD local commit(s) not on origin - push or drop them or the update check keeps failing"
+	fi
+
+	print_build_msg
+	exit 0
+}
