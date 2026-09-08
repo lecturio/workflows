@@ -196,12 +196,14 @@ directory, needs no project clone, and is the one command the update check does
 not gate, since it exists to clear that check.
 
 It also reports unpushed local commits, because the check fires on any divergence
-from origin and not only on being behind. Without that line an update looks
+from the upstream and not only on being behind. Without that line an update looks
 successful while the next command still refuses to run:
 
 ```
-[INFO] 1 local commit(s) not on origin - push or drop them or the update check keeps failing
+[INFO] 1 local commit(s) not on origin/master - push or drop them or the update check keeps failing
 ```
+
+The message names the branch's actual upstream, which need not be on `origin`.
 
 A modified worktree stops the update with git's own message; nothing is changed.
 

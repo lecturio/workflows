@@ -199,7 +199,13 @@ function handle_self_command() {
 		exit 1
 	fi
 
-	cd "$WF_DIR" || exit 1
+	if ! cd "$WF_DIR"; then
+		WF_STATUS=1
+		print_err "Could not enter the tool clone at $WF_DIR"
+		print_build_msg
+		exit 1
+	fi
+
 	print_msg "Updating $WF_DIR"
 	emit "git pull --rebase"
 	if [ $? -gt 0 ]; then
@@ -208,9 +214,10 @@ function handle_self_command() {
 		exit 1
 	fi
 
+	local UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
 	local AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null)
 	if [ "${AHEAD:-0}" -gt 0 ]; then
-		print_msg "$AHEAD local commit(s) not on origin - push or drop them or the update check keeps failing"
+		print_msg "$AHEAD local commit(s) not on ${UPSTREAM:-upstream} - push or drop them or the update check keeps failing"
 	fi
 
 	print_build_msg
