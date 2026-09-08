@@ -71,6 +71,8 @@ export WF_REPO
 load_gitflow "$WF_GIT_ROOT/.gitflow"
 : "${WF_PROD_BRANCH:=master}"
 : "${WF_STAGING_BRANCH:=staging}"
+require_safe_branch_name "$WF_PROD_BRANCH" "WF_PROD_BRANCH"
+require_safe_branch_name "$WF_STAGING_BRANCH" "WF_STAGING_BRANCH"
 export WF_PROD_BRANCH
 export WF_STAGING_BRANCH
 

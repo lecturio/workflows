@@ -24,7 +24,7 @@ export WF_VERBOSE=0
 
 ```
 
-* `WF_DEBUG` - set to `1` to print every git command before it runs
+* `WF_DEBUG` - set to `1` for a dry-run: print each git command and do not execute it
 * `WF_VERBOSE` - not used at the moment
 
 ## Per-repo branch names
@@ -41,6 +41,8 @@ WF_STAGING_BRANCH=devel
 * `WF_STAGING_BRANCH` — branch deployed to the staging server (default `staging`)
 
 Partial files are valid. Setting only `WF_PROD_BRANCH=main` still uses staging `staging`. Repos that already use `master` and `staging` need no `.gitflow`.
+
+Keys present in `.gitflow` override the environment. Keys omitted from the file (or when there is no file) use the environment if set, otherwise the defaults. Trailing spaces on values are ignored.
 
 The `pr` goal derives the GitHub compare URL from the current repo's `origin` remote.
 
@@ -160,7 +162,7 @@ Prints the GitHub compare URL to open a pull request from the feature branch int
 gitflow XXX-001 pr
 ```
 
-* Output is a single line: `https://github.com/<org>/<repo>/compare/<prod-branch>...XXX-001?expand=1` (opens the new pull request flow in the browser when followed). For the default production branch that is `.../compare/master...XXX-001?expand=1`.
+* Output is a single line: `https://github.com/<org>/<repo>/compare/<prod-branch>...XXX-001?expand=1` (opens the new pull request flow in the browser when followed). For the default production branch that is `.../compare/master...XXX-001?expand=1`. Slashes in branch names are percent-encoded (`release/1.2` → `release%2F1.2`).
 
 ## Deployed
 
@@ -320,7 +322,7 @@ Please use version 0.0.3.RELEASE
 * 0.0.3.RELEASE
  * `gitflow` acts on the clone of the current directory
  * Optional repo `.gitflow` overrides production (`WF_PROD_BRANCH`) and staging (`WF_STAGING_BRANCH`) branch names
- * `pr` compare URL uses the current repo's `origin`
+ * `pr` compare URL uses the current repo's `origin` (branch names percent-encoded)
  * `config.sh` is optional and no longer holds `WF_REPO` or `WF_PROJECT_ROOT`
  * Templates renamed to `sample.config.sh` and `sample.dot.gitflow`
 

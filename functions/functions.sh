@@ -66,16 +66,48 @@ function print_err() {
 }
 
 #
-# Reject names that would break unquoted eval in emit().
+# Reject names that would break unquoted eval in emit() or be parsed as git options.
+# Must start with a letter or digit (no leading - or +). - is first in the class so it is literal.
 # $1 - branch name
 # $2 - label for the error (e.g. WF_TASK, WF_PROD_BRANCH)
 #
 function require_safe_branch_name() {
-	if [[ ! "$1" =~ ^[A-Za-z0-9._/+-]+$ ]]; then
+	if [[ ! "$1" =~ ^[A-Za-z0-9][-A-Za-z0-9._/]*$ ]]; then
 		print_err "Invalid branch name for $2: $1"
 		print_build_msg
 		exit 1
 	fi
+}
+
+#
+# Trim leading and trailing whitespace.
+# $1 - string
+#
+function trim_whitespace() {
+	local s="$1"
+	s="${s#"${s%%[![:space:]]*}"}"
+	s="${s%"${s##*[![:space:]]}"}"
+	printf '%s' "$s"
+}
+
+#
+# Percent-encode a git ref for a GitHub compare URL (so / becomes %2F).
+# $1 - branch name
+#
+function github_ref_encode() {
+	local s="$1" out="" i c hex
+	local LC_ALL=C
+	for (( i = 0; i < ${#s}; i++ )); do
+		c="${s:i:1}"
+		case "$c" in
+			[A-Za-z0-9._~-]) out+="$c" ;;
+			*)
+				printf -v hex '%02X' "'$c"
+				out+="%$hex"
+				;;
+		esac
+	done
+	printf '%s' "$out"
 }
 
 function print_build_msg() {
@@ -110,11 +142,11 @@ function load_gitflow() {
 		fi
 
 		key="${BASH_REMATCH[1]}"
-		value="${BASH_REMATCH[2]}"
+		value="$(trim_whitespace "${BASH_REMATCH[2]}")"
 		if [[ "$value" =~ ^\"(.*)\"$ ]]; then
-			value="${BASH_REMATCH[1]}"
+			value="$(trim_whitespace "${BASH_REMATCH[1]}")"
 		elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
-			value="${BASH_REMATCH[1]}"
+			value="$(trim_whitespace "${BASH_REMATCH[1]}")"
 		fi
 
 		case "$key" in
@@ -142,9 +174,11 @@ function refresh_origin() {
 # $1 - branch name
 #
 function require_origin_branch() {
-	emit "git rev-parse --verify --quiet origin/$1" quiet
+	local branch="$1"
+	require_safe_branch_name "$branch" "origin branch"
+	emit "git rev-parse --verify --quiet origin/$branch" quiet
 	if [ $? -ne 0 ]; then
-		print_err "Configured branch origin/$1 does not exist"
+		print_err "Configured branch origin/$branch does not exist"
 		print_build_msg
 		exit 1
 	fi
