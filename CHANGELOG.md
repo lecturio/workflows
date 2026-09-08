@@ -1,7 +1,18 @@
 Changelog
 =========
 
-Current version: 0.0.3.RELEASE
+Current version: 0.0.4.SNAPSHOT
+
+0.0.4.SNAPSHOT
+--------------
+
+* `gitflow self update` pulls the tool's own clone, from any directory and
+  without a project clone; `self` is reserved in the ticket slot and takes no
+  other verb
+* the update check's advice names `gitflow self update` instead of
+  `git pull --rebase origin master`
+* completion offers `self` and its `update` verb, and no longer prints git
+  errors when used outside a clone
 
 0.0.3.RELEASE
 -------------

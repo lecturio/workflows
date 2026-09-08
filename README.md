@@ -160,7 +160,7 @@ Documentation
 * [docs/concepts.md](docs/concepts.md) — how the branches relate, what the
   `-track-` branches are for, and what the tool leaves to you
 * [docs/commands.md](docs/commands.md) — every stage in detail, including the git
-  commands it runs
+  commands it runs, plus `gitflow self update`
 * [docs/troubleshooting.md](docs/troubleshooting.md) — error messages, conflict
   recovery, re-syncing after staging is recreated
 * [Additional commands during feature development](https://github.com/lecturio/workflows/wiki/Additional-commands-during-feature-development) (wiki)
