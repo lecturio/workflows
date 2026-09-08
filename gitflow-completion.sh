@@ -7,7 +7,7 @@ _completion() {
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	let cword=COMP_CWORD-1
 	let _ret && _ret=0
-	opts="in-progress resolved deployable closed pr"
+	opts="in-progress to-staging resolved deployable closed pr"
 	self_opts="update"
 
 	if [[ $WF_DEBUG -eq 1 ]]; then
@@ -28,6 +28,8 @@ _completion() {
 			fi
 		elif [[ $prev == "resolved" ]]; then
 			COMPREPLY=( $(compgen -W "sync" -- "${cur}") )
+		elif [[ $prev == "to-staging" ]]; then
+			COMPREPLY=( $(compgen -W "-m" -- "${cur}") )
 		elif [[ $prev == "sync" && $cword == 3 ]]; then
 			COMPREPLY=( $(compgen -W "-m" -- "${cur}") )
 		fi

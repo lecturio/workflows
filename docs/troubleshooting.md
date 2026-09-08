@@ -11,30 +11,57 @@ Error messages
 | `[ERROR] gitflow must be run inside a project clone` | the current directory is not inside a git repository | `cd` into the project you want to act on |
 | `[ERROR] Could not read origin URL from the current repository` | the project has no `origin` remote | `git remote add origin …` |
 | `Provide parameters: gitflow JIRA-001 in-progress` | ticket or stage missing | pass both: `gitflow ABC-123 in-progress` |
-| `Available commands are: in-progress resolved deployable closed pr` | the stage name is not one of those five | note it is `deployable`, not `deployed` |
+| `Available commands are: in-progress to-staging resolved deployable closed pr` | the stage name is not one of those six | note it is `deployable`, not `deployed` |
 | `[ERROR] Invalid branch name for WF_TASK: …` | the ticket ID has characters the tool refuses | names must match `^[A-Za-z0-9][-A-Za-z0-9._/]*$` |
 | `[ERROR] Configured branch origin/devel does not exist` | `.gitflow` (or the environment) names a branch that isn't on `origin` | fix the name or push the branch |
-| `[ERROR] Local changes need to be pushed to ABC-123` | `resolved` needs the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
+| `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
+| `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them, stash them, or use `resolved`, which stops before the commit. Untracked files never block it |
+| `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
+| `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
+| `[ERROR] to-staging takes no option: gitflow ABC-123 to-staging [-m "message"]` | a word other than `-m` followed the stage | drop it; `sync` belongs to `resolved`, not to this stage |
 | `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside `resolved` hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
 
 Conflicts
 ---------
 
-**During `resolved`** you are in a cherry-pick on the staging branch. Check
-`git status`, fix the files, `git add` or `git rm` them, then
-`git cherry-pick --continue`. Finish with
-`gitflow ABC-123 resolved sync -m "…"` and `git push origin staging`.
+**During `to-staging` or `resolved`** you are in a cherry-pick on the staging
+branch. Check `git status` and fix the files, then `git add` or `git rm` them.
+What finishes the job depends on whether the range had commits after the one that
+conflicted, which `to-staging` tells you:
+
+```bash
+gitflow ABC-123 resolved sync -m "…"          # nothing was queued behind it
+git push origin staging
+```
+
+```bash
+git commit && git cherry-pick --continue      # commits were, repeat per conflict
+gitflow ABC-123 resolved sync                 # bookmark, once the range is through
+git push origin staging
+```
+
+The commit in the second form is not optional: the cherry-pick runs with `-n`, so
+the resolved changes sit staged and uncommitted, and `git cherry-pick --continue`
+refuses to apply the next commit over them with `your local changes would be
+overwritten by cherry-pick`.
+
+Re-running `to-staging` while the conflict is unresolved refuses and changes
+nothing, so it cannot eat a half-finished resolution. Once the resolution is
+committed, the sequencer state git leaves behind is cleared by the next
+`to-staging` with `git cherry-pick --quit`, which keeps your index.
 
 **During `deployable`** you are in a rebase. `git status` names the branch being
 rebased, which tells you whether you are in the first rebase (ticket onto
 production, where conflicts nearly always are) or the second. Fix, `git add` /
 `git rm`, `git rebase --continue`, then run `gitflow ABC-123 deployable` again.
 
-Either stage can be restarted from scratch by simply re-running it: `resolved`
-aborts a pending cherry-pick first, `deployable` aborts a pending rebase. Both
-therefore discard whatever you had half-resolved, so use `git log` and
-`git status` to see where you stand before you re-run.
+`resolved` and `deployable` can be restarted from scratch by simply re-running
+them: `resolved` aborts a pending cherry-pick first, `deployable` a pending
+rebase. Both therefore discard whatever you had half-resolved, so use `git log`
+and `git status` to see where you stand before you re-run. `to-staging` is the
+exception — it refuses instead, and abandoning its cherry-pick is something you
+ask for yourself with `git cherry-pick --abort`.
 
 I ran `resolved sync` before `resolved`
 ---------------------------------------
@@ -87,8 +114,7 @@ resolve as usual:
 
 ```bash
 gitflow ABC-123-track closed    # deletes ABC-123-track-* only, local and remote
-gitflow ABC-123 resolved
-gitflow ABC-123 resolved sync -m "ABC-123 add the thing"
+gitflow ABC-123 to-staging
 git push origin staging
 ```
 

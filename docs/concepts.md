@@ -31,11 +31,11 @@ gitGraph
   branch "ABC-123"
   commit id: "f1"
   checkout staging
-  cherry-pick id: "f1" tag: "resolved + sync"
+  cherry-pick id: "f1" tag: "to-staging"
   checkout "ABC-123"
   commit id: "f2"
   checkout staging
-  cherry-pick id: "f2" tag: "resolved + sync"
+  cherry-pick id: "f2" tag: "to-staging"
   checkout "ABC-123"
   commit id: "f3" type: HIGHLIGHT tag: "accepted on staging"
   checkout master
@@ -45,11 +45,13 @@ gitGraph
 1. `gitflow ABC-123 in-progress` cuts the branch from `origin/master` and pushes
    it (`f1` starts the work).
 2. You commit and push on `ABC-123` with plain git.
-3. `gitflow ABC-123 resolved` cherry-picks the new commits onto staging and stops
-   before the commit, so you can review them.
-4. `gitflow ABC-123 resolved sync -m "…"` commits them and records the sync. You
-   run `git push origin staging`.
-5. Steps 2–4 repeat for as long as the ticket is being reviewed on staging (`f2`
+3. `gitflow ABC-123 to-staging` cherry-picks the new commits onto staging, commits
+   them with a message naming those commits, and records the sync. You run
+   `git push origin staging`.
+4. `gitflow ABC-123 resolved` and `gitflow ABC-123 resolved sync -m "…"` do the
+   same in two steps, stopping between them so you can review the cherry-pick.
+   That is also how a conflicted sync is finished.
+5. Steps 2–3 repeat for as long as the ticket is being reviewed on staging (`f2`
    and the second cherry-pick).
 6. `gitflow ABC-123 pr` prints a compare link into production, for code review.
    Nothing is merged there.
@@ -64,21 +66,22 @@ no merge commit.
 Tracking branches (`ABC-123-track-N`)
 -------------------------------------
 
-Every `resolved sync` creates and pushes a branch called `ABC-123-track-N`, with N
-counting up from 1, pointing at the ticket-branch tip that was just synced. It is
-a bookmark and nothing else: it records how far staging has caught up with the
-ticket.
+Every sync — `to-staging`, or `resolved sync` — creates and pushes a branch called
+`ABC-123-track-N`, with N counting up from 1, pointing at the ticket-branch tip
+that was just synced. It is a bookmark and nothing else: it records how far
+staging has caught up with the ticket.
 
-The next `resolved` finds the highest `origin/ABC-123-track-N` and cherry-picks
-only `origin/ABC-123-track-N..ABC-123`. When no tracking branch exists yet it uses
+The next sync finds the highest `origin/ABC-123-track-N` and cherry-picks only
+`origin/ABC-123-track-N..ABC-123`. When no tracking branch exists yet it uses
 `origin/master..ABC-123`, which is the whole ticket branch.
 
 Two consequences are worth knowing:
 
-* Staging gets **one commit per sync**, carrying the message you pass to `-m`,
-  which squashes however many ticket commits went into that round. Production
-  later gets the ticket's individual commits. The two branches are not meant to
-  have matching history.
+* Staging gets **one commit per sync**, squashing however many ticket commits went
+  into that round. `to-staging` writes the message itself, listing the short shas
+  of the commits it squashed; `resolved sync` carries the message you pass to `-m`.
+  Production later gets the ticket's individual commits. The two branches are not
+  meant to have matching history.
 * **Deleting a tracking branch rewinds the bookmark**, so the next `resolved`
   picks the commits again from wherever the previous bookmark sits. That is the
   lever behind both recovery procedures in
@@ -87,9 +90,9 @@ Two consequences are worth knowing:
 What the tool leaves to you
 ---------------------------
 
-* **It never pushes staging or production.** `resolved sync` and `deployable` both
-  stop with the commits in your local branch and print a reminder. Pushing is a
-  deliberate manual step.
+* **It never pushes staging or production.** `to-staging`, `resolved sync` and
+  `deployable` all stop with the commits in your local branch and print a
+  reminder. Pushing is a deliberate manual step.
 * **It doesn't rebase your ticket branch onto production while you work.** To pick
   up production changes mid-ticket, run `git pull --rebase origin master` on the
   ticket branch yourself. `deployable` is the only stage that rebases onto

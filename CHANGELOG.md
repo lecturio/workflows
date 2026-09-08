@@ -6,6 +6,18 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* new stage `to-staging` puts a ticket on staging in one command: it cherry-picks,
+  commits and bookmarks, writing a commit message that names the commits it picked
+  (`ABC-123 a1b2c3d 4e5f6a7`), and leaves the push to you
+* `to-staging` commits nothing when the cherry-pick conflicts, and refuses to
+  start on a dirty worktree or over an unresolved conflict, so it never folds
+  anything unreviewed into staging
+* `-m "message"` is parsed positionally, which fixes the message being mangled
+  when the ticket ID itself contains `-m`
+* an unpushed ticket branch now reports `BUILD FAILURE` instead of
+  `BUILD SUCCESS` before exiting 1
+* `setup_branch`, the tracking-branch lookup and the cherry-pick range moved into
+  `functions/branches.sh`, shared by `resolved`, `resolved sync` and `to-staging`
 * `gitflow self update` pulls the tool's own clone, from any directory and
   without a project clone; `self` is reserved in the ticket slot and takes no
   other verb

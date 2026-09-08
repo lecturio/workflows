@@ -85,20 +85,30 @@ export WF_STAGING_BRANCH
 print_msg "Scanning for tasks..."
 print_msg - line
 
-# global options support
-for i in "$@"
+# global options support: -m "message", -m"message", --message "message",
+# --message=message, and the unquoted -m message with the words after it
+MESSAGE=""
+ARGS=("$@")
+for (( i = 0; i < ${#ARGS[@]}; i++ ))
 do
-case $i in
-    -m*|--message*)
-    MESSAGE="${@##*-m}"
-    ;;
-    *)
-            # unknown option
-    ;;
+case "${ARGS[i]}" in
+	-m|--message)
+	MESSAGE="${ARGS[*]:i+1}"
+	break
+	;;
+	--message=*)
+	MESSAGE="${ARGS[i]#--message=}"
+	break
+	;;
+	-m*)
+	MESSAGE="${ARGS[i]#-m}"
+	break
+	;;
+	*)
+		# unknown option
+	;;
 esac
 done
-
-MESSAGE=$(echo $MESSAGE | sed '$s/'$WF_TASK' resolved sync //')
 
 source $WF_DIR/commands/${WF_COMMAND}.sh
 if [[ "$WF_COMMAND" == "resolved" && "$WF_ENV" == "sync" ]]; then
