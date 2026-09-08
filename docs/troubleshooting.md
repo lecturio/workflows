@@ -147,21 +147,12 @@ Branch-name completion relies on git's own bash completion. Without
 [git-completion](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash)
 you still get stage names, but not branches.
 
-Looking at what a stage would do
---------------------------------
-
-Copy `sample.config.sh` to `config.sh` in the tool's directory and set
-`WF_DEBUG=1`. Each git command is then printed instead of executed:
-
-```
-info>>> git checkout -b ABC-123 origin/master <<<
-```
-
-This shows intent, not a faithful simulation: stages that read the output of a
-command (the highest tracking-branch number, whether a branch exists) see the
-printed line instead of a result, so the later steps of a dry run can differ from
-a real one. Set it back to `0` when you are done.
+Where the output went
+---------------------
 
 The last output of the commands that report through `[INFO]` is kept in
 `output.log` in the tool's directory. It is overwritten on each run and ignored by
 git.
+
+There is no dry-run mode. To see what a stage runs without running it, read
+[the command reference](commands.md), which lists the git commands for each.

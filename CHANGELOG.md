@@ -6,6 +6,12 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* removed `WF_DEBUG` and `WF_VERBOSE`, with `sample.config.sh` and the reading of
+  the tool's `config.sh`: the dry run `WF_DEBUG=1` promised could not work, since
+  the update check read the printed line instead of a result and stopped every
+  run, and `WF_VERBOSE` never did anything. A leftover `config.sh` is now ignored
+  and can be deleted; branch names come from the project's `.gitflow` or the
+  environment
 * new stage `to-staging` puts a ticket on staging in one command: it cherry-picks,
   commits and bookmarks, writing a commit message that names the commits it picked
   (`ABC-123 a1b2c3d 4e5f6a7`), and leaves the push to you

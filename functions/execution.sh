@@ -1,55 +1,47 @@
 #!/bin/bash
 
 #
-# executes specific command
-# $1 - bash command to execute
-# $2 - debug $1 (just print it)
-# $2 - append print_msg on output 
+# Executes a command.
+# $1 - the command
+# $2 - "quiet" to throw its output away, "print_msg" to report it through [INFO];
+#      without it the command writes straight to the terminal
 #
 function emit() {
-	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
-		echo -n "info>>> "
-		echo "$1 <<<"
+	if [ "$2" == "quiet" ]; then
+		eval $1 >/dev/null 2>&1
+	elif [ "$2" == "print_msg" ]; then
+		$(eval $1 >$WF_DIR/output.log 2>&1)
+		WF_STATUS=$?
+		print_msg "`tail $WF_DIR/output.log`"
 	else
-		if [ "$2" == "quiet" ]; then
-			eval $1 >/dev/null 2>&1
-		elif [ "$2" == "print_msg" ]; then
-			$(eval $1 >$WF_DIR/output.log 2>&1)
-			WF_STATUS=$?
-			print_msg "`tail $WF_DIR/output.log`"
-		else
-			eval $1
-		fi
+		eval $1
 	fi
 }
 
+#
+# The same, but a failing command ends the run. In "print_msg" mode it is quiet
+# while the command succeeds and reports through [ERROR] when it does not.
+#
 function emit_failonerror() {
-	if [[ $WF_DEBUG -eq 1 || "$2" == "debug" ]]; then
-		echo -n "info>>> "
-		echo "$1 <<<"
+	if [ "$2" == "quiet" ]; then
+		eval $1 >/dev/null 2>&1
+		if [ $? -gt 0 ]; then
+			exit 1
+		fi
+	elif [ "$2" == "print_msg" ]; then
+		$(eval $1 >$WF_DIR/output.log 2>&1)
+		WF_STATUS=$?
+		if [ $WF_STATUS -gt 0 ]; then
+			print_err "`tail $WF_DIR/output.log`"
+			print_msg - line
+			print_msg "BUILD FAILURE"
+			print_msg - line
+			exit 1
+		fi
 	else
-		if [ "$2" == "quiet" ]; then
-			eval $1 >/dev/null 2>&1
-			if [ $? -gt 0 ]; then
-				exit 1
-			fi
-		elif [ "$2" == "print_msg" ]; then
-			$(eval $1 >$WF_DIR/output.log 2>&1)
-			WF_STATUS=$?
-			if [ $WF_STATUS -gt 0 ]; then
-				print_err "`tail $WF_DIR/output.log`"
-				print_msg - line
-				print_msg "BUILD FAILURE"
-				print_msg - line
-				exit 1
-			fi
-			
-		else
-			eval $1
-			if [ $? -gt 0 ]; then
-				exit 1
-			fi
-
+		eval $1
+		if [ $? -gt 0 ]; then
+			exit 1
 		fi
 	fi
 }

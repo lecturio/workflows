@@ -32,15 +32,6 @@ export WF_STATUS=0
 WF_TASK=$(printf '%s' "$WF_TASK" | sed 's|^origin/||')
 WF_GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
-# config.sh is optional - it only carries the debug flags
-if [ -f "$WF_DIR/config.sh" ]; then
-	source "$WF_DIR/config.sh"
-fi
-: "${WF_DEBUG:=0}"
-: "${WF_VERBOSE:=0}"
-export WF_DEBUG
-export WF_VERBOSE
-
 source $WF_DIR/functions/functions.sh
 
 # "self" is a reserved word in the ticket slot - it addresses the tool itself,

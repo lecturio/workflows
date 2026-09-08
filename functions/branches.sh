@@ -29,8 +29,8 @@ function track_branch_ns() {
 
 #
 # Highest N among the origin/ABC-123-track-N bookmarks, empty when the ticket
-# has none yet. Read with plain git rather than emit(), which would hand back
-# its own printed line under WF_DEBUG instead of a result.
+# has none yet. Plain git, not emit(): emit() is for the commands that change
+# something, and this one only reads.
 #
 function highest_track_num() {
 	local TRACK_NS="$(track_branch_ns)"

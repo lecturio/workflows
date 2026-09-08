@@ -157,13 +157,6 @@ WF_STAGING_BRANCH=devel
 Either key may be left out. Keys in the file win over the environment; keys that
 are absent fall back to the environment, then to the defaults above.
 
-Dry run
--------
-
-Copy `sample.config.sh` to `config.sh` in this repo and set `WF_DEBUG=1` to print
-each git command instead of running it. `config.sh` is optional; without it the
-flags are `0`. `WF_VERBOSE` is accepted but unused.
-
 Documentation
 -------------
 

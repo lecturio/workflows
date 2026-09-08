@@ -312,8 +312,6 @@ Variables
 | --- | --- | --- | --- |
 | `WF_PROD_BRANCH` | `master` | project `.gitflow`, or environment | branch deployed to the live server |
 | `WF_STAGING_BRANCH` | `staging` | project `.gitflow`, or environment | branch deployed to the staging server |
-| `WF_DEBUG` | `0` | tool `config.sh` | `1` prints each git command instead of running it |
-| `WF_VERBOSE` | `0` | tool `config.sh` | accepted but unused |
 
 `.gitflow` lives at the project's repository root and is meant to be committed, so
 that everyone on the project uses the same branch names. It takes `KEY=value`
