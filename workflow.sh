@@ -29,7 +29,7 @@ export WF_COMMAND=$2
 export WF_ENV=$3
 export WF_STATUS=0
 
-WF_TASK=`echo $WF_TASK | sed '$s/origin\///'`
+WF_TASK=$(printf '%s' "$WF_TASK" | sed 's|^origin/||')
 WF_GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
 # config.sh is optional - it only carries the debug flags
