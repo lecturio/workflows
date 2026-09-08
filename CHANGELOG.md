@@ -18,6 +18,10 @@ Current version: 0.0.4.SNAPSHOT
 * `to-staging` commits nothing when the cherry-pick conflicts, and refuses to
   start on a dirty worktree or over an unresolved conflict, so it never folds
   anything unreviewed into staging
+* the tracking-branch lookup matches only exact `origin/<ticket>-track-<number>`
+  names, so a ticket whose name ends with another ticket's (`ABC` next to
+  `XABC`) or a bookmark on a second remote can no longer be picked as the sync
+  point and turned into a range git cannot resolve
 * `-m "message"` is parsed positionally, which fixes the message being mangled
   when the ticket ID itself contains `-m`
 * an unpushed ticket branch now reports `BUILD FAILURE` instead of

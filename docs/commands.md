@@ -107,9 +107,14 @@ yours** — the tool prints the `git push origin staging` reminder but does not 
 Because it commits without a stop for review, it refuses to start while the
 worktree has modified tracked files, or while a cherry-pick still holds unresolved
 conflicts, rather than folding either into the staging commit. Untracked files are
-fine. State left behind by a cherry-pick that is already finished is cleared with
+fine. It also refuses while a cherry-pick still has commits queued behind a
+conflict you resolved by hand, since only `git cherry-pick --continue` can apply
+those. State left behind by a cherry-pick that is already finished is cleared with
 `git cherry-pick --quit`, which keeps your index; `--abort`, which rewinds, is
 never run for you.
+
+Anything other than `-m` after the stage name is an error, `sync` included: that
+option belongs to `resolved`.
 
 On conflict nothing is committed and no tracking branch is created. The conflicted
 cherry-pick is left in place, and the message names the commit it stopped on along
@@ -119,10 +124,18 @@ with anything still queued behind it:
 [ERROR] Cherry-pick onto staging conflicts - nothing was committed
 [INFO] Stopped on 2654521 ABC-123 conflicting edit
 [INFO] Fix the conflicted files and "git add" them, then:
-[INFO]   git commit && git cherry-pick --continue   # 1 more commit(s) to apply, repeat per conflict
-[INFO]   gitflow ABC-123 resolved sync             # bookmark once the range is through
+[INFO]   git commit && git cherry-pick --continue     # 1 more commit(s) to apply, repeat per conflict
+[INFO]   git status                                   # -n leaves the ones that applied cleanly staged
+[INFO]   gitflow ABC-123 resolved sync -m "message"   # commits what is staged, then bookmarks
 [INFO] Or start over with: git cherry-pick --abort
 ```
+
+The `git status` step is not decoration. `--continue` keeps the `-n` the range
+started with, so commits after the conflicted one apply **staged and
+uncommitted**; `resolved sync` with no `-m` would then bookmark over work that was
+never committed. Passing `-m` commits it first. When the conflict was on the last
+commit of the range there is nothing queued behind it, and the message says so by
+offering only the `resolved sync -m` line.
 
 Re-running it while those conflicts are unresolved refuses too, so a half-finished
 resolution is never thrown away.
@@ -166,8 +179,14 @@ you with, so commit first:
 
 ```bash
 git commit && git cherry-pick --continue      # repeat for each further conflict
-gitflow ABC-123 resolved sync                 # bookmark, once the range is through
+git status                                    # commits that applied cleanly are staged
+gitflow ABC-123 resolved sync -m "…"          # commits them, then bookmarks
 ```
+
+`--continue` keeps the `-n`, so the commits after the conflicted one land staged
+and uncommitted. `resolved sync` without a message only bookmarks, which would
+leave that work sitting uncommitted on staging behind a bookmark that claims it is
+already there.
 
 To start over, re-run `gitflow ABC-123 resolved` — it aborts the in-flight
 cherry-pick first, which also means **re-running throws away uncommitted

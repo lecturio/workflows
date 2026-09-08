@@ -29,15 +29,18 @@ function track_branch_ns() {
 
 #
 # Highest N among the origin/ABC-123-track-N bookmarks, empty when the ticket
-# has none yet. Plain git, not emit(): emit() is for the commands that change
-# something, and this one only reads.
+# has none yet. Only exact origin/<ticket>-track-<digits> names count: matching
+# the namespace loosely picked up another ticket whose name ends with this one
+# (origin/XABC-track-9 while syncing ABC) and bookmarks on other remotes
+# (upstream/ABC-track-77), and either one becomes a range git cannot resolve.
+# Plain git, not emit(): emit() is for the commands that change something.
 #
 function highest_track_num() {
 	local TRACK_NS="$(track_branch_ns)"
-	local TRACK_NUM=$(git branch -r | grep -F -- "$TRACK_NS" |\
-		sed "s|origin/$TRACK_NS||" | sort -nr | head -1)
 
-	trim_whitespace "$TRACK_NUM"
+	git branch -r --list "origin/${TRACK_NS}*" |\
+		sed -n "s|^[[:space:]]*origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p" |\
+		sort -nr | head -1
 }
 
 #

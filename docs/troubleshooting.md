@@ -18,7 +18,8 @@ Error messages
 | `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them, stash them, or use `resolved`, which stops before the commit. Untracked files never block it |
 | `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
 | `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
-| `[ERROR] to-staging takes no option: gitflow ABC-123 to-staging [-m "message"]` | a word other than `-m` followed the stage | drop it; `sync` belongs to `resolved`, not to this stage |
+| `[ERROR] to-staging takes no option other than -m: gitflow ABC-123 to-staging [-m "message"]` | a word other than the `-m` forms followed the stage | drop it; `sync` belongs to `resolved`, not to this stage, and no other flag is accepted |
+| `[ERROR] A cherry-pick on staging still has 1 commit(s) to apply` | a conflict was resolved and committed, but the rest of the range was never applied | `git cherry-pick --continue`, then `gitflow ABC-123 resolved sync -m "…"`; or `git cherry-pick --abort` to give up on the rest |
 | `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside `resolved` hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
 
@@ -37,14 +38,17 @@ git push origin staging
 
 ```bash
 git commit && git cherry-pick --continue      # commits were, repeat per conflict
-gitflow ABC-123 resolved sync                 # bookmark, once the range is through
+git status                                    # see what the continue left staged
+gitflow ABC-123 resolved sync -m "…"          # commits that, then bookmarks
 git push origin staging
 ```
 
-The commit in the second form is not optional: the cherry-pick runs with `-n`, so
+Neither commit in the second form is optional. The cherry-pick runs with `-n`, so
 the resolved changes sit staged and uncommitted, and `git cherry-pick --continue`
 refuses to apply the next commit over them with `your local changes would be
-overwritten by cherry-pick`.
+overwritten by cherry-pick`. For the same reason the commits that then apply
+cleanly are left staged, so the sync needs `-m` to commit them: without it the
+bookmark would move as if they were on staging while they are only staged.
 
 Re-running `to-staging` while the conflict is unresolved refuses and changes
 nothing, so it cannot eat a half-finished resolution. Once the resolution is

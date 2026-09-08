@@ -10,14 +10,33 @@ MSG_FILE=""
 trap 'if [ -n "$MSG_FILE" ]; then rm -f "$MSG_FILE"; fi' EXIT
 
 #
-# This stage takes no option. -m lands in the same slot, so it is not one.
+# This stage takes no option. -m lands in the same slot, so the message forms
+# workflow.sh parses are the only words allowed to follow it.
 #
 function require_no_option() {
-	if [[ -n "$WF_ENV" && "${WF_ENV#-}" == "$WF_ENV" ]]; then
-		WF_STATUS=1
-		print_err "to-staging takes no option: gitflow $WF_TASK to-staging [-m \"message\"]"
-		print_build_msg
-		exit 1
+	case "$WF_ENV" in
+		"" | -m | -m?* | --message | --message=?*)
+			;;
+		*)
+			WF_STATUS=1
+			print_err "to-staging takes no option other than -m: gitflow $WF_TASK to-staging [-m \"message\"]"
+			print_build_msg
+			exit 1
+			;;
+	esac
+}
+
+#
+# How many commits the in-flight cherry-pick still has queued, the one it
+# stopped on included. Zero when no sequencer state is lying around.
+#
+function pending_pick_count() {
+	local TODO="`git rev-parse --git-path sequencer`/todo"
+
+	if [ -f "$TODO" ]; then
+		grep -c '^pick ' "$TODO"
+	else
+		echo 0
 	fi
 }
 
@@ -44,10 +63,27 @@ function require_clean_start() {
 		exit 1
 	fi
 
-	# A finished cherry-pick leaves its sequencer state behind, and that blocks
-	# the next one. --quit forgets the operation and keeps the index; --abort
-	# would rewind the branch.
-	if [[ -d "`git rev-parse --git-path sequencer`" ]] ||
+	# The worktree is clean, so whatever cherry-pick is in flight had its
+	# conflict resolved and committed by hand. One queued commit is the one that
+	# was resolved: state git leaves behind, which blocks the next cherry-pick
+	# and is cleared with --quit, keeping the index. More than one means commits
+	# are still waiting, and only "git cherry-pick --continue" can apply them:
+	# quitting would drop them from the queue, and the next run would start the
+	# whole range again and collide with the resolution that is already there.
+	local QUEUED="`pending_pick_count`"
+
+	if [ "$QUEUED" -gt 1 ]; then
+		WF_STATUS=1
+		let "QUEUED=QUEUED-1"
+		print_err "A cherry-pick on `git rev-parse --abbrev-ref HEAD` still has $QUEUED commit(s) to apply"
+		print_msg "Apply them: git cherry-pick --continue   # repeat per conflict"
+		print_msg "Then commit anything it leaves staged: gitflow $WF_TASK resolved sync -m \"message\""
+		print_msg "Or give up on the rest: git cherry-pick --abort"
+		print_build_msg
+		exit 1
+	fi
+
+	if [[ "$QUEUED" -gt 0 ]] ||
 		git rev-parse -q --verify CHERRY_PICK_HEAD >/dev/null 2>&1; then
 		emit "git cherry-pick --quit" quiet
 	fi
@@ -74,11 +110,7 @@ function write_commit_message() {
 #
 function fail_on_conflict() {
 	local TODO="`git rev-parse --git-path sequencer`/todo"
-	local PENDING=0
-
-	if [ -f "$TODO" ]; then
-		PENDING=`grep -c '^pick ' "$TODO"`
-	fi
+	local PENDING="`pending_pick_count`"
 
 	WF_STATUS=1
 	print_err "Cherry-pick onto $WF_STAGING_BRANCH conflicts - nothing was committed"
@@ -90,8 +122,9 @@ function fail_on_conflict() {
 	print_msg "Fix the conflicted files and \"git add\" them, then:"
 	if [ "$PENDING" -gt 1 ]; then
 		let "PENDING=PENDING-1"
-		print_msg "  git commit && git cherry-pick --continue   # $PENDING more commit(s) to apply, repeat per conflict"
-		print_msg "  gitflow $WF_TASK resolved sync             # bookmark once the range is through"
+		print_msg "  git commit && git cherry-pick --continue     # $PENDING more commit(s) to apply, repeat per conflict"
+		print_msg "  git status                                   # -n leaves the ones that applied cleanly staged"
+		print_msg "  gitflow $WF_TASK resolved sync -m \"message\"   # commits what is staged, then bookmarks"
 	else
 		print_msg "  gitflow $WF_TASK resolved sync -m \"message\"   # commits and bookmarks"
 	fi
