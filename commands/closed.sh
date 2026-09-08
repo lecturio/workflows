@@ -1,6 +1,6 @@
 #!/bin/bash
 
-emit "git fetch" quiet
+refresh_origin
 require_origin_branch "$WF_PROD_BRANCH"
 emit "git checkout $WF_PROD_BRANCH" quiet
 

@@ -32,6 +32,9 @@ if [ "$MESSAGE" != "" ]; then
 	emit_failonerror "git commit -am \"$MESSAGE\"" print_msg
 fi
 
+refresh_origin
+require_origin_branch "$WF_STAGING_BRANCH"
+
 # init functions
 track_feature_branch
 setup_branch "$WF_STAGING_BRANCH"

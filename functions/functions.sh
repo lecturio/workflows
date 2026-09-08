@@ -36,7 +36,7 @@ function validate_input_params() {
 		exit 1 
 	fi
 
-
+	require_safe_branch_name "$WF_TASK" "WF_TASK"
 }
 
 #TODO format properly multi-lines output
@@ -63,6 +63,19 @@ function print_msg() {
 
 function print_err() {
 	echo "[ERROR] $1"
+}
+
+#
+# Reject names that would break unquoted eval in emit().
+# $1 - branch name
+# $2 - label for the error (e.g. WF_TASK, WF_PROD_BRANCH)
+#
+function require_safe_branch_name() {
+	if [[ ! "$1" =~ ^[A-Za-z0-9._/+-]+$ ]]; then
+		print_err "Invalid branch name for $2: $1"
+		print_build_msg
+		exit 1
+	fi
 }
 
 function print_build_msg() {
@@ -106,6 +119,7 @@ function load_gitflow() {
 
 		case "$key" in
 			WF_PROD_BRANCH|WF_STAGING_BRANCH)
+				require_safe_branch_name "$value" "$key"
 				export "$key=$value"
 				;;
 			*)
@@ -113,6 +127,14 @@ function load_gitflow() {
 				;;
 		esac
 	done < "$GITFLOW_FILE"
+}
+
+#
+# Update origin and drop stale remote-tracking branches.
+#
+function refresh_origin() {
+	emit "git fetch" quiet
+	emit "git remote prune origin" quiet
 }
 
 #

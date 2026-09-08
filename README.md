@@ -9,7 +9,7 @@ When feature is ready - it is merged with the production branch (`WF_PROD_BRANCH
 
 Run `gitflow` from inside the target clone (any subdirectory). The tool acts on that repository - the remote and the repository root are read from it, so there is nothing to configure per project.
 
-Tool expects that you have previosly cloned the production branch to your local system.
+Tool expects that you have previously cloned the production branch to your local system.
 
 Tool works with ssh so you need to have setup ssh-key-paris.
 

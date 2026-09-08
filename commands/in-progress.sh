@@ -1,7 +1,6 @@
 #!/bin/bash
 
-emit "git fetch" quiet
-emit "git remote prune origin" quiet
+refresh_origin
 require_origin_branch "$WF_PROD_BRANCH"
 emit "git show-ref --verify refs/heads/$WF_TASK" quiet
 EXISTS_LOCALLY=$?
