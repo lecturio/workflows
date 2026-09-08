@@ -73,6 +73,7 @@ function print_err() {
 #
 function require_safe_branch_name() {
 	if [[ ! "$1" =~ ^[A-Za-z0-9][-A-Za-z0-9._/]*$ ]]; then
+		WF_STATUS=1
 		print_err "Invalid branch name for $2: $1"
 		print_build_msg
 		exit 1
@@ -178,6 +179,7 @@ function require_origin_branch() {
 	require_safe_branch_name "$branch" "origin branch"
 	emit "git rev-parse --verify --quiet origin/$branch" quiet
 	if [ $? -ne 0 ]; then
+		WF_STATUS=1
 		print_err "Configured branch origin/$branch does not exist"
 		print_build_msg
 		exit 1
