@@ -11,7 +11,7 @@ Run `gitflow` from inside the target clone (any subdirectory). The tool acts on 
 
 Tool expects that you have previously cloned the production branch to your local system.
 
-Tool works with ssh so you need to have setup ssh-key-paris.
+Tool works with SSH so you need to have set up SSH key pairs.
 
 `config.sh` is optional. Create a copy of sample.config.sh as config.sh only if you want the debug flags; without it both default to `0`:
 
