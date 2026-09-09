@@ -144,14 +144,14 @@ function stopped_on_merge() {
 # preflight can belong to another ticket, and naming this ticket's "resolved
 # sync" there would commit somebody else's work onto staging and bookmark this
 # ticket as synced when none of its commits went in - which the next sync then
-# skips for good. A sync of this ticket runs on staging and applies exactly the
-# commits of its range, so the branch and that range decide it. Ancestry is not
-# enough: every commit of production is an ancestor of the ticket branch too,
-# and a pick of one of those is nothing to do with this ticket.
+# skips for good. A sync of this ticket runs on staging and works through exactly
+# the commits of its range, so the branch and the whole of that range decide it.
+# Ancestry is not enough - every commit of production is an ancestor of the ticket
+# branch - and neither is one queued commit falling inside the range, since a pick
+# of part of the range would bookmark past the part nobody applied.
 #
 function queue_belongs_to_ticket() {
-	local TODO="`git rev-parse --git-path sequencer`/todo"
-	local SHA=
+	local SQ="`git rev-parse --git-path sequencer`"
 
 	if [ "`git rev-parse --abbrev-ref HEAD`" != "$WF_STAGING_BRANCH" ]; then
 		return
@@ -161,22 +161,24 @@ function queue_belongs_to_ticket() {
 		return
 	fi
 
-	if [ -f "$TODO" ]; then
-		SHA=`sed -n '1s/^[a-z][a-z]* \([0-9a-f][0-9a-f]*\).*/\1/p' "$TODO"`
-	else
-		SHA=`git rev-parse -q --verify CHERRY_PICK_HEAD`
-	fi
-
-	if [ -z "$SHA" ]; then
+	local EXPECTED=`git rev-list "$(cherry_pick_range)" 2>/dev/null | sort -u`
+	if [ -z "$EXPECTED" ]; then
 		return
 	fi
 
-	local FULL=`git rev-parse -q --verify "${SHA}^{commit}"`
-	if [ -z "$FULL" ]; then
+	# Everything the sequencer holds, applied and still queued alike. A pick of
+	# part of the range is not this sync: finishing it and bookmarking would
+	# move the bookmark to the ticket tip while the commits nobody applied stay
+	# behind it, and every later sync would skip them.
+	local QUEUED_SHAS=`{ sed -n 's/^[a-z][a-z]* \([0-9a-f][0-9a-f]*\).*/\1/p' "$SQ/todo" 2>/dev/null
+		sed -n 's/^[a-z][a-z]* \([0-9a-f][0-9a-f]*\).*/\1/p' "$SQ/done" 2>/dev/null; }`
+	if [ -z "$QUEUED_SHAS" ]; then
 		return
 	fi
 
-	if git rev-list "`cherry_pick_range`" 2>/dev/null | grep -qx "$FULL"; then
+	local RESOLVED=`for SHA in $QUEUED_SHAS; do git rev-parse -q --verify "${SHA}^{commit}"; done | sort -u`
+
+	if [ "$RESOLVED" == "$EXPECTED" ]; then
 		echo yes
 	fi
 }

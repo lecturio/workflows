@@ -41,8 +41,9 @@ Current version: 0.0.4.SNAPSHOT
   output carries colour when `color.branch` is forced and a `*` or `+` in front
   of a checked-out branch, either of which hid an existing bookmark
 * a cherry-pick found in the preflight is only treated as this ticket's sync when
-  it is on staging and applying one of the commits in the ticket's own range,
-  since every commit of production is reachable from the ticket branch too; for anybody
+  it is on staging and its queue covers the ticket's whole range: every commit of
+  production is reachable from the ticket branch, and a pick of part of the range
+  would bookmark past the part nobody applied; for anybody
   else's pick the stage names the commit being applied and hands it back to git,
   rather than offering a `resolved sync` that would commit their work and
   bookmark this ticket as synced

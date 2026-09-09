@@ -77,11 +77,18 @@ The next sync finds the highest `origin/ABC-123-track-N` and cherry-picks only
 
 Two consequences are worth knowing:
 
-* Staging gets **one commit per sync**, squashing however many ticket commits went
-  into that round. `to-staging` writes the message itself, listing the short shas
-  of the commits it squashed; `resolved sync` carries the message you pass to `-m`.
-  Production later gets the ticket's individual commits. The two branches are not
-  meant to have matching history.
+* Staging normally gets **one commit per sync**, squashing however many ticket
+  commits went into that round. `to-staging` writes the message itself, listing
+  the short shas of the commits it squashed; `resolved sync` carries the message
+  you pass to `-m`. Production later gets the ticket's individual commits. The two
+  branches are not meant to have matching history.
+
+  Two rounds depart from one commit. When staging already carries everything in
+  the range — someone applied it by hand — `to-staging` records the bookmark and
+  commits nothing. And a round whose cherry-pick conflicted part way takes as many
+  commits as it takes to get through the range, because `git cherry-pick
+  --continue` cannot run over a resolution that is only staged, so each conflict
+  is committed before the next commit is applied.
 * **Deleting a tracking branch rewinds the bookmark**, so the next `resolved`
   picks the commits again from wherever the previous bookmark sits. That is the
   lever behind both recovery procedures in
