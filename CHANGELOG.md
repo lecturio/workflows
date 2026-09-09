@@ -6,6 +6,11 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `closed` starts by checking production out, and a failure there ends the run
+  instead of being discarded. Git refuses to delete the branch that is checked
+  out and the remote copy is deleted first, so a worktree that could not be left
+  - changes the switch would overwrite - had the ticket deleted on origin, kept
+  locally, and `BUILD SUCCESS` reported over both
 * `closed` no longer deletes branches it was not asked to delete. It read the
   branch list through `git branch`, whose `* ` marker for the checked-out branch
   glob-expanded against the repository root, so a root holding files named

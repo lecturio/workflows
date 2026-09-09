@@ -34,6 +34,7 @@ Error messages
 | `[ERROR] staging is a deployed branch and is never deleted` | the ticket slot of `closed` named production or staging | pass a ticket; those two branches are not deletable through the tool |
 | `[ERROR] Nothing deleted: that needs a confirmation and there is no terminal to ask on` | some branch `closed` matched has commits `origin/master` has not got, and the run has no terminal to ask on | check the listed branches, then run `gitflow ABC-123 closed` yourself and answer `y` |
 | `[ERROR] Nothing deleted` | the confirmation was answered with anything but `y` | nothing was deleted; re-run when you mean it |
+| `[ERROR] Could not check out master - nothing was deleted` | `closed` starts on production, and the switch failed - usually the worktree holds changes it would overwrite | run `git checkout master` yourself for git's reason, deal with it, then re-run |
 
 Conflicts
 ---------

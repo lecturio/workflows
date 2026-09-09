@@ -13,7 +13,20 @@ fi
 
 refresh_origin
 require_origin_branch "$WF_PROD_BRANCH"
+
+# Getting off the ticket branch is a precondition, not a courtesy: git refuses
+# to delete the branch that is checked out, and the remote copy is deleted
+# first, so a discarded failure here - which is what this checkout used to do,
+# running quiet - left the ticket gone from origin, kept locally, and reported
+# BUILD SUCCESS over both.
 emit "git checkout $WF_PROD_BRANCH" quiet
+if [ $? -gt 0 ]; then
+	WF_STATUS=1
+	print_err "Could not check out $WF_PROD_BRANCH - nothing was deleted"
+	print_msg "Check it out by hand to see git's reason, then re-run"
+	print_build_msg
+	exit 1
+fi
 
 #
 # The ticket's branches, matched as "git branch | grep -w" did: the ticket as a
