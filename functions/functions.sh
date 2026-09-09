@@ -3,8 +3,9 @@
 
 source $WF_DIR/functions/connectivity.sh
 source $WF_DIR/functions/execution.sh
+source $WF_DIR/functions/branches.sh
 
-COMMANDS=( "in-progress" "resolved" "deployable" "closed" "pr" )
+COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
 
 #
 # Validation of input parameters

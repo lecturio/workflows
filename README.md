@@ -16,12 +16,13 @@ while the work is reviewed there, and folded back into production once it is
 accepted. The branch is named after the ticket, so the ID you pass is also the
 branch name.
 
-The five stages
----------------
+The stages
+----------
 
 ```bash
 gitflow ABC-123 in-progress   # create or switch to the ticket branch
-gitflow ABC-123 resolved      # bring new commits onto staging (two steps, see below)
+gitflow ABC-123 to-staging    # put the new commits on staging, in one step
+gitflow ABC-123 resolved      # the same in two steps, when you want to review first
 gitflow ABC-123 pr            # print the pull-request link for review
 gitflow ABC-123 deployable    # fold the ticket into production
 gitflow ABC-123 closed        # delete the ticket branches
@@ -90,23 +91,32 @@ Quick start: one ticket, end to end
    git commit -am "ABC-123 add the thing" && git push
    ```
 
-3. **Put it on staging.** Cherry-picks the commits added since your last sync onto
-   the staging branch and stops before committing, so you can check the result.
+3. **Put it on staging.** Cherry-picks the commits added since your last sync,
+   commits them with a message naming those commits, and stops. The push is
+   yours:
+
+   ```bash
+   gitflow ABC-123 to-staging
+   git log -1 --format=%s staging     # ABC-123 a1b2c3d 4e5f6a7
+   git push origin staging
+   ```
+
+   Repeat steps 2–3 for as long as the ticket is being reviewed on staging.
+
+   It commits nothing when the cherry-pick conflicts, and nothing when your
+   worktree is dirty. Pass `-m "..."` to write the subject yourself; the commits
+   then move into the message body.
+
+4. **When you want to look before it is committed.** `resolved` cherry-picks and
+   stops with the changes staged, `resolved sync` commits them and records the
+   sync. This is also the path out of a conflict:
 
    ```bash
    gitflow ABC-123 resolved
    git status                 # review; resolve conflicts if there are any
-   ```
-
-4. **Commit staging, then push it yourself.** `resolved sync` commits and records
-   how far staging has caught up. It does not push:
-
-   ```bash
    gitflow ABC-123 resolved sync -m "ABC-123 add the thing"
    git push origin staging
    ```
-
-   Repeat steps 2–4 for as long as the ticket is being reviewed on staging.
 
 5. **Open a pull request for review.** Prints the compare URL and runs no git
    commands. The PR is a review vehicle; leave it unmerged, step 6 is what
@@ -146,13 +156,6 @@ WF_STAGING_BRANCH=devel
 
 Either key may be left out. Keys in the file win over the environment; keys that
 are absent fall back to the environment, then to the defaults above.
-
-Dry run
--------
-
-Copy `sample.config.sh` to `config.sh` in this repo and set `WF_DEBUG=1` to print
-each git command instead of running it. `config.sh` is optional; without it the
-flags are `0`. `WF_VERBOSE` is accepted but unused.
 
 Documentation
 -------------

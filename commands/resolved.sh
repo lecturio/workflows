@@ -1,40 +1,8 @@
 #!/bin/bash
 
-#
-# Prepare specific branch for merging.
-# $1 - branch name
-#
-function setup_branch() {
-	local BRANCH_EXIST=`emitgit_is_local_branch $1`
-	if [ $BRANCH_EXIST -gt 0 ]; then
-		emit_failonerror "git checkout -b $1 origin/$1"
-	fi
-
-	emit_failonerror "git checkout $1"
-	emitgit_sync_branch $1
-
-	if [ $? -gt 0 ]; then
-		print_msg "Resolve conflicts manually"
-		exit 1
-	fi
-}
-
 # cherry pick changes
 function sync_feature_changes() {
-
-	## Duplicated in resolved sync
-	local TRACK_NS="$WF_TASK-track-"
-	local TRACK_NUM=$(emit "git branch -r | grep $TRACK_NS |\
-		sed 's/origin\/$TRACK_NS//' | sort -nr | head -1")
-
-	local TRACK_NUM=$(echo $TRACK_NUM | sed 's/^[ \t]*//')
-	local TRACK_BRANCH=${TRACK_NS}${TRACK_NUM}
-
-	if [ "$TRACK_NUM" == "" ]; then
-		local CHERRY_PICK=origin/$WF_PROD_BRANCH..$WF_TASK
-	else
-		local CHERRY_PICK=origin/$TRACK_BRANCH..$WF_TASK
-	fi
+	local CHERRY_PICK="$(cherry_pick_range)"
 
 	emit "git checkout $WF_STAGING_BRANCH" quiet
 	#emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin"
