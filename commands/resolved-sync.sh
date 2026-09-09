@@ -2,6 +2,8 @@
 
 print_msg "Sync changes to $WF_STAGING_BRANCH"
 
+require_staging_checked_out "resolved sync"
+
 if [ "$MESSAGE" != "" ]; then
 	emit_failonerror "git commit -am \"$MESSAGE\"" print_msg
 fi

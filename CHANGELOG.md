@@ -6,6 +6,10 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `resolved sync` refuses unless the staging branch is checked out. It commits
+  where HEAD stands and bookmarks the ticket as synced either way, so a run from
+  a ticket branch put the round there and still recorded the ticket as synced,
+  which every later sync then skipped. `to-staging` asserts the same thing
 * new `skills/gitflow`, a Claude Code skill to copy into a project's
   `.claude/skills`, so an agent driving the tool knows the order of the stages,
   which pushes are not its to make, that a run reporting `BUILD FAILURE` can
