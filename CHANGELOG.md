@@ -23,7 +23,17 @@ Current version: 0.0.4.SNAPSHOT
   work in progress. It names the operation it found, and only offers
   `resolved sync` for a cherry-pick, which is the only one that can finish
 * a cherry-pick that fails without a conflict, a merge commit in the range being
-  the usual reason, is reported as itself instead of as a conflict to resolve
+  the usual reason, is reported as itself instead of as a conflict to resolve,
+  and is told apart from a resolution waiting to be committed by whether the
+  commit it stopped on is a merge
+* a half-finished `git revert` of several commits is recognised as a revert
+  rather than as a cherry-pick: it shares the sequencer, and its queue outlives
+  `REVERT_HEAD`
+* the conflict advice accounts for commits queued behind the conflict wherever
+  it is printed, so a bookmark is never suggested before the rest of the range
+  is applied
+* an attached `-mmessage` or `--message=message` must be the last argument;
+  anything after it is rejected instead of silently ignored
 * a bookmark whose push was refused no longer wedges the ticket: the next number
   is counted over local branches as well as origin's, so the stage numbers past
   the stray instead of stopping at "a branch named ABC-123-track-1 already

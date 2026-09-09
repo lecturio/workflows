@@ -112,14 +112,22 @@ still open, and says which one it found:
 * unresolved conflicts, from a cherry-pick, a rebase, a merge or a revert. Only
   for a cherry-pick does it point at `resolved sync`, because that is the only one
   those commands can finish; for the others it tells you to finish or abandon the
-  operation with git itself.
+  operation with git itself. A revert of several commits runs through the same
+  sequencer a cherry-pick does, and `REVERT_HEAD` is gone once its conflict is
+  committed, so the queue's own verb is what decides which operation you are
+  told about.
+* a resolution that is staged but not committed. `git cherry-pick --continue`
+  refuses in that state, so the commit has to come first, and `resolved sync -m`
+  does both that and the bookmark.
 * a cherry-pick paused with its conflicts already resolved (`git status`:
   "all conflicts fixed: run git cherry-pick --continue"). Its own picks never
   reach that state, so this is work by hand and it is left alone.
 * a cherry-pick with commits still queued behind a conflict you resolved by hand,
   since only `git cherry-pick --continue` can apply those.
-* a cherry-pick that stopped without conflicting and left part of a range staged,
-  where committing would put half a range on staging.
+* a cherry-pick that stopped on a merge commit, which leaves part of a range
+  staged; committing that would put half a range on staging. It is told apart
+  from a staged resolution by whether the commit the queue stopped on is itself a
+  merge.
 
 The operation is named before the worktree is called dirty, because a resolution
 that is staged looks exactly like local changes of your own, and "commit or stash"
@@ -130,7 +138,9 @@ clears, with `git cherry-pick --quit`, which keeps your index; `--abort`, which
 rewinds, is never run for you.
 
 Anything other than `-m` after the stage name is an error, `sync` included: that
-option belongs to `resolved`.
+option belongs to `resolved`. `-m message` takes every word after it, so an
+attached `-mmessage` or `--message=message` must be the last argument — anything
+following one of those is rejected rather than ignored.
 
 On conflict nothing is committed and no tracking branch is created. The conflicted
 cherry-pick is left in place, and the message names the commit it stopped on along
