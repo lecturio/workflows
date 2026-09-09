@@ -24,6 +24,30 @@ function setup_branch() {
 }
 
 #
+# Refuse unless the staging branch is the one checked out. Both staging stages
+# commit where HEAD stands and then bookmark the ticket as synced, so a commit
+# that lands on any other branch is recorded as synced with staging holding none
+# of it. The whole ref is compared: a detached HEAD reports itself as "HEAD".
+# $1 - stage name, for the message
+#
+function require_staging_checked_out() {
+	local HEAD_REF=`git symbolic-ref --quiet HEAD 2>/dev/null`
+
+	if [ "$HEAD_REF" == "refs/heads/$WF_STAGING_BRANCH" ]; then
+		return 0
+	fi
+
+	WF_STATUS=1
+	if [ "$HEAD_REF" == "" ]; then
+		print_err "$1 commits onto $WF_STAGING_BRANCH, and HEAD is detached"
+	else
+		print_err "$1 commits onto $WF_STAGING_BRANCH, and ${HEAD_REF#refs/heads/} is checked out"
+	fi
+	print_build_msg
+	exit 1
+}
+
+#
 # Name prefix of the ticket's tracking branches: ABC-123-track-
 #
 function track_branch_ns() {
