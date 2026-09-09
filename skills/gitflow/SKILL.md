@@ -56,8 +56,10 @@ Rules
 3. **Never merge the pull request.** `pr` prints a compare URL for code review
    and nothing else; production is updated by `deployable` plus a push.
 4. **Ask before `closed`.** It deletes the ticket branch and every
-   `ABC-123-track-N` bookmark, local and remote, immediately, with no
-   confirmation and no undo.
+   `ABC-123-track-N` bookmark, local and remote, with no undo. It stops to ask
+   only when some of them hold commits production has not got, and with no
+   terminal to ask on it deletes nothing and fails - so get the user's answer
+   before running it, not from it.
 5. **Do not improvise recovery.** A stage that fails prints the commands that
    finish the job; follow those. Never reach for `git cherry-pick --abort`,
    `git cherry-pick --skip`, `git rebase --abort`, `git reset --hard` or
@@ -146,9 +148,24 @@ gitflow ABC-123 closed
 ```
 
 Deletes the ticket's branches, local and remote, and leaves you on production.
-Ask first (rule 4). Branches are matched by name, so a prefix narrows the
-deletion: `gitflow ABC-123-track closed` removes only the bookmarks and leaves
-`ABC-123` alone.
+Ask first (rule 4). Branches are matched on the ticket as a whole word inside the
+branch name, so a prefix narrows the deletion: `gitflow ABC-123-track closed`
+removes only the bookmarks and leaves `ABC-123` alone. The production and staging
+branches are never deleted, whether they are named in the ticket slot or matched
+by it.
+
+A branch with commits that are not on `origin/master` needs a `y` on the terminal,
+and there is no terminal on a run of yours:
+
+```
+[INFO] Commits not in origin/master: ABC-123 origin/ABC-123
+[ERROR] Nothing deleted: that needs a confirmation and there is no terminal to ask on
+[INFO] BUILD FAILURE
+```
+
+Nothing was deleted. Show the user that list — those commits exist nowhere else —
+and let them run the command themselves. Do not work around the prompt with
+`git push origin --delete` or `git branch -D`.
 
 Where does the ticket stand
 ---------------------------

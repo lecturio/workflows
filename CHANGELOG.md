@@ -6,6 +6,21 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `closed` no longer deletes branches it was not asked to delete. It read the
+  branch list through `git branch`, whose `* ` marker for the checked-out branch
+  glob-expanded against the repository root, so a root holding files named
+  `master` and `staging` had those local branches deleted; the names are now read
+  through `git for-each-ref`, which prints them bare. Production and staging are
+  never deleted, in the ticket slot (`gitflow staging closed` removed the shared
+  branch from origin and reported `BUILD SUCCESS`) or as something the ticket
+  matched. Deleting a branch that holds commits `origin/master` has not got - an
+  unpushed `deployable`, work that never landed - now lists them and waits for a
+  `y`, and stops with `BUILD FAILURE` when there is no terminal to ask on.
+  Remote branches are origin's alone, without `origin/HEAD` and without any
+  second remote, whose refs used to abort the whole push; and names are passed to
+  `git push origin --delete` as they are, instead of being rewritten with `sed`,
+  which had turned local `feat/ABC-123` into two branches that do not exist and
+  rewrote any name containing `origin`
 * `resolved sync` refuses unless the staging branch is checked out. It commits
   where HEAD stands and bookmarks the ticket as synced either way, so a run from
   a ticket branch put the round there and still recorded the ticket as synced,

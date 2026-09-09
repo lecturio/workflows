@@ -253,8 +253,7 @@ it aborts first.
 `closed`
 --------
 
-Deletes the ticket's branches, local and remote. **It deletes immediately, with no
-confirmation and no undo.**
+Deletes the ticket's branches, local and remote.
 
 ```bash
 gitflow ABC-123 closed
@@ -262,14 +261,35 @@ gitflow ABC-123 closed
 
 ```bash
 git checkout master
-git push origin :ABC-123 :ABC-123-track-1 …   # all matching remote branches
-git branch -D ABC-123 ABC-123-track-1 …       # all matching local branches
+git push origin --delete ABC-123 ABC-123-track-1 …   # all matching remote branches
+git branch -D ABC-123 ABC-123-track-1 …              # all matching local branches
 ```
 
-Branches are matched with `git branch | grep -w <TICKET>`, so passing a prefix
-narrows the deletion: `gitflow ABC-123-track closed` removes the tracking branches
-and leaves `ABC-123` in place. That is the first half of the
-[staging re-sync](troubleshooting.md#staging-was-recreated).
+Branches are matched on the ticket as a whole word inside the branch name, so
+passing a prefix narrows the deletion: `gitflow ABC-123-track closed` removes the
+tracking branches and leaves `ABC-123` in place. That is the first half of the
+[staging re-sync](troubleshooting.md#staging-was-recreated). Only `origin` is
+searched for the remote branches, so a second remote keeps its copies.
+
+The deployed branches are never deleted. `gitflow staging closed` and
+`gitflow master closed` are refused, and a ticket that happens to match one of
+them — `release` against `WF_PROD_BRANCH=release/1.2` — takes every other branch
+it matched and leaves those two.
+
+**Everything else it deletes, it deletes for good.** The one thing it stops for is
+a branch holding commits `origin/master` has not got, which is what an unpushed
+`deployable` or work that never landed looks like:
+
+```
+[INFO] Commits not in origin/master: ABC-123 origin/ABC-123
+[INFO] Delete anyway? [y/N] y
+```
+
+Only `y` goes ahead; anything else deletes nothing and reports `BUILD FAILURE`.
+Commits are weighed by patch, so the rebase in `deployable` and the cherry-picks
+in `to-staging` do not make a branch look unmerged for having different SHAs than
+production. When there is no terminal to ask on — a script, a pipe, an agent — the
+run stops with the same list and deletes nothing, and you run it again by hand.
 
 `resolved`, `resolved sync`
 ---------------------------
