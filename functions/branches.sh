@@ -15,7 +15,10 @@ function setup_branch() {
 	emitgit_sync_branch $1
 
 	if [ $? -gt 0 ]; then
+		WF_STATUS=1
+		print_err "Could not bring $1 up to date with origin/$1"
 		print_msg "Resolve conflicts manually"
+		print_build_msg
 		exit 1
 	fi
 }
@@ -44,6 +47,30 @@ function highest_track_num() {
 }
 
 #
+# The number for the next bookmark. Counted over the local branches as well as
+# origin's, because the two can disagree: when the push of a bookmark fails the
+# local branch is left behind, and numbering from origin alone would pick that
+# same number again and stop at "a branch named ABC-123-track-1 already
+# exists" on every later run. Only origin decides the sync point, which is why
+# highest_track_num stays origin-only - a local-only bookmark is not a ref
+# origin/... can be built from.
+#
+function next_track_num() {
+	local TRACK_NS="$(track_branch_ns)"
+	local HIGHEST=$( { git branch --list "${TRACK_NS}*" |\
+			sed -n "s|^[* ]*${TRACK_NS}\([0-9][0-9]*\)$|\1|p"
+		git branch -r --list "origin/${TRACK_NS}*" |\
+			sed -n "s|^[[:space:]]*origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p"
+		} | sort -nr | head -1 )
+
+	if [ "$HIGHEST" == "" ]; then
+		HIGHEST=0
+	fi
+
+	echo $((10#$HIGHEST + 1))
+}
+
+#
 # The ticket commits staging has not seen yet: everything since the newest
 # bookmark, or the whole ticket branch when there is no bookmark.
 #
@@ -68,14 +95,7 @@ function track_feature_branch() {
 		emit_failonerror "git checkout $WF_TASK" print_msg
 	fi
 
-	local TRACK_NUM="$(highest_track_num)"
-	if [ "$TRACK_NUM" == "" ]; then
-		local TRACK_NUM=0
-	fi
-
-	let "TRACK_NUM=1+${TRACK_NUM}"
-
-	local TRACK_BRANCH="$(track_branch_ns)${TRACK_NUM}"
+	local TRACK_BRANCH="$(track_branch_ns)$(next_track_num)"
 
 	emit_failonerror "git branch --track ${TRACK_BRANCH}" print_msg
 	emit_failonerror "git checkout ${TRACK_BRANCH}" quiet

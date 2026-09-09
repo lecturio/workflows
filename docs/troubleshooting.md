@@ -23,7 +23,9 @@ Error messages
 | `[ERROR] A cherry-pick is paused on staging with its conflicts already resolved` | a cherry-pick you started by hand is waiting for `--continue` | finish it with `git cherry-pick --continue`, or drop it with `git cherry-pick --abort` |
 | `[ERROR] A rebase with unresolved conflicts is in progress on …` (or `merge`, `revert`) | another git operation is half-finished; `to-staging` will not commit over it | finish it, or `git rebase --abort` / `git merge --abort` / `git revert --abort` |
 | `[ERROR] Cherry-pick onto staging failed - git's reason is above` | the cherry-pick failed without a conflict, usually a merge commit in the range | read git's message, then `git cherry-pick --abort`; rebase the ticket branch instead of merging into it |
-| `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside `resolved` hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
+| `[ERROR] Could not bring staging up to date with origin/staging` + `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside a stage hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
+| `[ERROR] A cherry-pick left part of a range staged on staging` | an earlier `to-staging` stopped without conflicting (a merge commit in the range) and its partial result is still staged | `git cherry-pick --abort`; do not commit it, it is half a range |
+| `[ERROR] remote: rejecting refs/heads/ABC-123-track-N` | the remote refused the bookmark push, e.g. a protected-ref rule | the local bookmark stays behind and the next sync numbers past it, so fix the rule and re-run; delete the stray with `git branch -D ABC-123-track-N` if you want the numbers tidy |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
 
 Conflicts

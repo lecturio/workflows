@@ -93,16 +93,11 @@ function require_clean_start() {
 		exit 1
 	fi
 
-	if [ -n "`git status --porcelain --untracked-files=no`" ]; then
-		WF_STATUS=1
-		print_err "Commit or stash your local changes before to-staging"
-		print_msg "It commits to $WF_STAGING_BRANCH without a review stop, so it refuses to sweep them in"
-		print_build_msg
-		exit 1
-	fi
-
 	# The conflicts are resolved but the operation itself is still open, and
-	# git is the only thing that can carry it to the end.
+	# git is the only thing that can carry it to the end. This has to be asked
+	# before the worktree is judged dirty: a resolution that is staged looks
+	# exactly like local changes of your own, and "commit or stash" is the one
+	# thing you must not do in the middle of a rebase.
 	case "$OP" in
 		rebase | merge | revert)
 			WF_STATUS=1
@@ -142,6 +137,29 @@ function require_clean_start() {
 		print_msg "Apply them: git cherry-pick --continue   # repeat per conflict"
 		print_msg "Then commit anything it leaves staged: gitflow $WF_TASK resolved sync -m \"message\""
 		print_msg "Or give up on the rest: git cherry-pick --abort"
+		print_build_msg
+		exit 1
+	fi
+
+	local DIRTY="`git status --porcelain --untracked-files=no`"
+
+	# One queued commit and something staged is the wreckage of a cherry-pick
+	# that stopped without conflicting - a merge commit in the range does this.
+	# What is staged is part of a range, so committing it would put half of one
+	# on staging: say so instead of asking for a commit.
+	if [[ "$QUEUED" -gt 0 && -n "$DIRTY" ]]; then
+		WF_STATUS=1
+		print_err "A cherry-pick left part of a range staged on $BRANCH"
+		print_msg "Committing it would put half a range on $WF_STAGING_BRANCH"
+		print_msg "Throw it away with: git cherry-pick --abort"
+		print_build_msg
+		exit 1
+	fi
+
+	if [ -n "$DIRTY" ]; then
+		WF_STATUS=1
+		print_err "Commit or stash your local changes before to-staging"
+		print_msg "It commits to $WF_STAGING_BRANCH without a review stop, so it refuses to sweep them in"
 		print_build_msg
 		exit 1
 	fi
@@ -258,6 +276,7 @@ fi
 track_feature_branch
 setup_branch "$WF_STAGING_BRANCH"
 
-if [ $WF_STATUS -eq 0 ]; then
+if [[ $WF_STATUS -eq 0 &&
+	-n "`git log --oneline origin/$WF_STAGING_BRANCH..$WF_STAGING_BRANCH`" ]]; then
 	print_msg "Now push it: git push origin $WF_STAGING_BRANCH"
 fi

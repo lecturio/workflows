@@ -118,6 +118,12 @@ still open, and says which one it found:
   reach that state, so this is work by hand and it is left alone.
 * a cherry-pick with commits still queued behind a conflict you resolved by hand,
   since only `git cherry-pick --continue` can apply those.
+* a cherry-pick that stopped without conflicting and left part of a range staged,
+  where committing would put half a range on staging.
+
+The operation is named before the worktree is called dirty, because a resolution
+that is staged looks exactly like local changes of your own, and "commit or stash"
+is the one thing not to do in the middle of a rebase.
 
 State left behind by a cherry-pick that is already finished is the one thing it
 clears, with `git cherry-pick --quit`, which keeps your index; `--abort`, which

@@ -24,6 +24,13 @@ Current version: 0.0.4.SNAPSHOT
   `resolved sync` for a cherry-pick, which is the only one that can finish
 * a cherry-pick that fails without a conflict, a merge commit in the range being
   the usual reason, is reported as itself instead of as a conflict to resolve
+* a bookmark whose push was refused no longer wedges the ticket: the next number
+  is counted over local branches as well as origin's, so the stage numbers past
+  the stray instead of stopping at "a branch named ABC-123-track-1 already
+  exists" on every later run
+* a stage that cannot fast-forward a deployed branch says so through `[ERROR]`
+  and finishes with `BUILD FAILURE` instead of exiting on a bare
+  `Resolve conflicts manually`
 * the tracking-branch lookup matches only exact `origin/<ticket>-track-<number>`
   names, so a ticket whose name ends with another ticket's (`ABC` next to
   `XABC`) or a bookmark on a second remote can no longer be picked as the sync
