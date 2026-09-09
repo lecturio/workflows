@@ -6,6 +6,12 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* the documented flow is `in-progress`, `pr`, `to-staging`, `deployable`,
+  `closed`, with the pull request opened early so review runs while the ticket is
+  tested on staging. `resolved` and `resolved sync` are documented as deprecated -
+  they still run, and finishing a conflicted sync is what they are still for - and
+  their reference moved to `docs/deprecated.md`. Documentation only; no stage
+  changed
 * removed `WF_DEBUG` and `WF_VERBOSE`, with `sample.config.sh` and the reading of
   the tool's `config.sh`: the dry run `WF_DEBUG=1` promised could not work, since
   the update check read the printed line instead of a result and stopped every

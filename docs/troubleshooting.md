@@ -15,7 +15,7 @@ Error messages
 | `[ERROR] Invalid branch name for WF_TASK: …` | the ticket ID has characters the tool refuses | names must match `^[A-Za-z0-9][-A-Za-z0-9._/]*$` |
 | `[ERROR] Configured branch origin/devel does not exist` | `.gitflow` (or the environment) names a branch that isn't on `origin` | fix the name or push the branch |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
-| `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them, stash them, or use `resolved`, which stops before the commit. Untracked files never block it |
+| `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them or stash them; untracked files never block it |
 | `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
 | `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
 | `[ERROR] to-staging takes no option other than -m: gitflow ABC-123 to-staging [-m "message"]` | a word other than the `-m` forms followed the stage | drop it; `sync` belongs to `resolved`, not to this stage, and no other flag is accepted |
@@ -35,10 +35,11 @@ Error messages
 Conflicts
 ---------
 
-**During `to-staging` or `resolved`** you are in a cherry-pick on the staging
-branch. Check `git status` and fix the files, then `git add` or `git rm` them.
-What finishes the job depends on whether the range had commits after the one that
-conflicted, which `to-staging` tells you:
+**During `to-staging`** you are in a cherry-pick on the staging branch. Check
+`git status` and fix the files, then `git add` or `git rm` them. What finishes the
+job depends on whether the range had commits after the one that conflicted, which
+`to-staging` tells you. This is the one case that still uses `resolved sync`,
+otherwise [deprecated](deprecated.md):
 
 ```bash
 gitflow ABC-123 resolved sync -m "…"          # nothing was queued behind it
@@ -86,22 +87,10 @@ and `git status` to see where you stand before you re-run. `to-staging` is the
 exception — it refuses instead, and abandoning its cherry-pick is something you
 ask for yourself with `git cherry-pick --abort`.
 
-I ran `resolved sync` before `resolved`
----------------------------------------
+The ticket branch looks diverged during a sync
+----------------------------------------------
 
-The sync recorded a bookmark that was never actually cherry-picked. Delete the
-newest tracking branch, locally and on the remote, then run `resolved` again:
-
-```bash
-git push origin :ABC-123-track-3     # 3 = highest existing number
-git branch -D ABC-123-track-3
-gitflow ABC-123 resolved
-```
-
-The ticket branch looks diverged during `resolved`
---------------------------------------------------
-
-When the ticket branch is up to date on the remote but `resolved` reports
+When the ticket branch is up to date on the remote but `to-staging` reports
 something like:
 
 ```
@@ -115,7 +104,7 @@ GitHub usually just needs a moment to catch up. Either:
 ```bash
 git rebase --abort
 # wait a little
-gitflow ABC-123 resolved
+gitflow ABC-123 to-staging
 ```
 
 or rebuild the local branch from the remote:
@@ -124,7 +113,7 @@ or rebuild the local branch from the remote:
 git checkout master           # or your production branch
 git branch -D ABC-123
 gitflow ABC-123 in-progress
-gitflow ABC-123 resolved
+gitflow ABC-123 to-staging
 ```
 
 Staging was recreated

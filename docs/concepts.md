@@ -45,31 +45,33 @@ gitGraph
 1. `gitflow ABC-123 in-progress` cuts the branch from `origin/master` and pushes
    it (`f1` starts the work).
 2. You commit and push on `ABC-123` with plain git.
-3. `gitflow ABC-123 to-staging` cherry-picks the new commits onto staging, commits
+3. `gitflow ABC-123 pr` prints a compare link into production, for code review.
+   It is opened once, early, and nothing is merged there.
+4. `gitflow ABC-123 to-staging` cherry-picks the new commits onto staging, commits
    them with a message naming those commits, and records the sync. You run
    `git push origin staging`.
-4. `gitflow ABC-123 resolved` and `gitflow ABC-123 resolved sync -m "…"` do the
-   same in two steps, stopping between them so you can review the cherry-pick.
-   That is also how a conflicted sync is finished.
-5. Steps 2–3 repeat for as long as the ticket is being reviewed on staging (`f2`
-   and the second cherry-pick).
-6. `gitflow ABC-123 pr` prints a compare link into production, for code review.
-   Nothing is merged there.
-7. `gitflow ABC-123 deployable` rebases `ABC-123` onto production, then moves
+5. Steps 2 and 4 repeat for as long as the ticket is being reviewed on staging
+   (`f2` and the second cherry-pick).
+6. `gitflow ABC-123 deployable` rebases `ABC-123` onto production, then moves
    production onto it. You run `git push origin master`.
-8. `gitflow ABC-123 closed` deletes the ticket's branches.
+7. `gitflow ABC-123 closed` deletes the ticket's branches.
 
-The diagram draws step 7 as a merge because that is what Mermaid can express.
+`gitflow ABC-123 resolved` and `gitflow ABC-123 resolved sync -m "…"` are the
+deprecated two-step form of step 4, stopping between them so you can review the
+cherry-pick. Finishing a conflicted sync is what they are still needed for; see
+[deprecated stages](deprecated.md).
+
+The diagram draws step 6 as a merge because that is what Mermaid can express.
 `deployable` rebases, so production ends up carrying the ticket's own commits with
 no merge commit.
 
 Tracking branches (`ABC-123-track-N`)
 -------------------------------------
 
-Every sync — `to-staging`, or `resolved sync` — creates and pushes a branch called
-`ABC-123-track-N`, with N counting up from 1, pointing at the ticket-branch tip
-that was just synced. It is a bookmark and nothing else: it records how far
-staging has caught up with the ticket.
+Every sync — `to-staging`, or the deprecated `resolved sync` — creates and pushes
+a branch called `ABC-123-track-N`, with N counting up from 1, pointing at the
+ticket-branch tip that was just synced. It is a bookmark and nothing else: it
+records how far staging has caught up with the ticket.
 
 The next sync finds the highest `origin/ABC-123-track-N` and cherry-picks only
 `origin/ABC-123-track-N..ABC-123`. When no tracking branch exists yet it uses
@@ -89,7 +91,7 @@ Two consequences are worth knowing:
   commits as it takes to get through the range, because `git cherry-pick
   --continue` cannot run over a resolution that is only staged, so each conflict
   is committed before the next commit is applied.
-* **Deleting a tracking branch rewinds the bookmark**, so the next `resolved`
+* **Deleting a tracking branch rewinds the bookmark**, so the next `to-staging`
   picks the commits again from wherever the previous bookmark sits. That is the
   lever behind both recovery procedures in
   [troubleshooting](troubleshooting.md).

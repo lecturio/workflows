@@ -9,9 +9,10 @@ gitflow <TICKET> <STAGE> [OPTION] [-m "message"]
 stripped, so tab-completing a remote branch works. The name has to match
 `^[A-Za-z0-9][-A-Za-z0-9._/]*$`.
 
-`STAGE` is one of `in-progress`, `to-staging`, `resolved`, `deployable`, `closed`,
-`pr`. `OPTION` is only ever `sync`, for `resolved`. `-m` applies to `to-staging`
-and to `resolved sync`.
+`STAGE` is one of `in-progress`, `pr`, `to-staging`, `deployable`, `closed` —
+which is also the order a ticket runs them in — plus the deprecated `resolved`.
+`OPTION` is only ever `sync`, for `resolved`. `-m` applies to `to-staging` and to
+`resolved sync`.
 
 `self` is a reserved word in the ticket slot: it addresses the tool itself, so it
 can never be a ticket. See [tool commands](#tool-commands).
@@ -52,12 +53,34 @@ return to the branch and pick up a teammate's commits. It does not bring
 production changes into the branch — do that with `git pull --rebase origin master`
 when you need it.
 
+`pr`
+----
+
+Prints the GitHub compare URL for a pull request from the ticket branch into
+production. Runs no git commands.
+
+```bash
+$ gitflow ABC-123 pr
+[INFO] https://github.com/lecturio/web-apps/compare/master...ABC-123?expand=1
+```
+
+The URL is built from the repo's `origin`, which may be `git@github.com:…`,
+`ssh://git@github.com/…` or `https://github.com/…`; anything else is an error.
+Slashes in branch names are percent-encoded, so `release/1.2` becomes
+`release%2F1.2`.
+
+The pull request is for code review. Open it once, as soon as the branch has
+commits on it, and leave it open while the ticket goes round `to-staging`: it
+follows the branch, so every later push shows up in it. Merging it on GitHub is
+not part of this workflow — `deployable` plus your push is what updates
+production.
+
 `to-staging`
 ------------
 
 Cherry-picks the commits added since the last sync onto staging, commits them, and
-records how far staging has caught up: one command for what `resolved` and
-`resolved sync` do in two.
+records how far staging has caught up: one command for what the deprecated
+`resolved` and `resolved sync` do in two.
 
 ```bash
 gitflow ABC-123 to-staging
@@ -81,9 +104,10 @@ git push origin ABC-123-track-N
 git checkout staging && git pull --rebase origin staging
 ```
 
-`<range>` is the same one [`resolved`](#resolved) uses: everything since the
-highest `origin/ABC-123-track-N`, or `origin/master..ABC-123` on the first sync.
-An empty range is reported and nothing else happens — no commit, no bookmark.
+`<range>` is the same one [`resolved`](deprecated.md#resolved) uses: everything
+since the highest `origin/ABC-123-track-N`, or `origin/master..ABC-123` on the
+first sync. An empty range is reported and nothing else happens — no commit, no
+bookmark.
 
 The message names the commits that went in, since nobody writes these by hand:
 
@@ -198,104 +222,6 @@ committing that would put half a range on staging under a bookmark claiming all 
 it, so the stage points at `--abort` instead of at `resolved sync`. Rebase the
 ticket branch instead of merging into it, and the range stays pickable.
 
-`resolved`
-----------
-
-Cherry-picks the commits added since the last sync onto staging, and stops before
-the commit so you can review them. [`to-staging`](#to-staging) is the same work in
-one step; reach for `resolved` when you want to see the cherry-pick before it is
-committed, or to finish one that conflicted.
-
-```bash
-gitflow ABC-123 resolved
-```
-
-Requires the ticket branch to be fully pushed, and both `origin/master` and
-`origin/staging` to exist.
-
-```bash
-git cherry-pick --abort                       # clears an unfinished cherry-pick
-git checkout master  && git pull --rebase origin master
-git checkout ABC-123 && git pull --rebase origin ABC-123
-git checkout staging && git pull --rebase origin staging
-git cherry-pick -Xignore-all-space -n <range>
-```
-
-Any of those three branches is created from `origin` first if you don't have it
-locally. `<range>` is `origin/ABC-123-track-<highest>..ABC-123`, or
-`origin/master..ABC-123` on the first sync — see [tracking
-branches](concepts.md#tracking-branches-abc-123-track-n).
-
-Leaves you on staging with the changes **staged but not committed**. Review them
-(`git status`, `git diff --cached`), then continue with `resolved sync`.
-
-On conflict: fix the files and `git add` / `git rm` them. If the range held
-nothing after the conflicting commit, `resolved sync -m "…"` finishes the job. If
-commits were still queued behind it, `git cherry-pick --continue` refuses while
-the resolved changes sit staged and uncommitted, which is exactly what `-n` leaves
-you with, so commit first:
-
-```bash
-git commit && git cherry-pick --continue      # for each further conflict: fix, git add, repeat
-git status                                    # commits that applied cleanly are staged
-gitflow ABC-123 resolved sync -m "…"          # commits them, then bookmarks
-gitflow ABC-123 resolved sync                 # use this when nothing is left staged
-```
-
-`--continue` keeps the `-n`, so the commits after the conflicted one land staged
-and uncommitted. `resolved sync` without a message only bookmarks, which would
-leave that work sitting uncommitted on staging behind a bookmark that claims it is
-already there.
-
-To start over, re-run `gitflow ABC-123 resolved` — it aborts the in-flight
-cherry-pick first, which also means **re-running throws away uncommitted
-cherry-pick work on staging**.
-
-`resolved sync`
----------------
-
-Commits the staged changes on staging and records how far staging has caught up.
-
-```bash
-gitflow ABC-123 resolved sync -m "ABC-123 add the thing"
-git push origin staging
-```
-
-```bash
-git commit -am "ABC-123 add the thing"        # only when -m is given
-git checkout ABC-123
-git branch --track ABC-123-track-N            # N = previous highest + 1
-git checkout ABC-123-track-N
-git push origin ABC-123-track-N
-git checkout staging && git pull --rebase origin staging
-```
-
-Leaves you on staging, one commit ahead of `origin/staging`. **The push is
-yours** — the tool prints `git push staging` as a reminder but does not push.
-
-`-m` is optional. Commit the staged changes yourself (IDE, or
-`git commit -am "…"`) and then run `gitflow ABC-123 resolved sync` with no
-message.
-
-`pr`
-----
-
-Prints the GitHub compare URL for a pull request from the ticket branch into
-production. Runs no git commands.
-
-```bash
-$ gitflow ABC-123 pr
-[INFO] https://github.com/lecturio/web-apps/compare/master...ABC-123?expand=1
-```
-
-The URL is built from the repo's `origin`, which may be `git@github.com:…`,
-`ssh://git@github.com/…` or `https://github.com/…`; anything else is an error.
-Slashes in branch names are percent-encoded, so `release/1.2` becomes
-`release%2F1.2`.
-
-The pull request is for code review. Merging it on GitHub is not part of this
-workflow — `deployable` plus your push is what updates production.
-
 `deployable`
 ------------
 
@@ -344,6 +270,14 @@ Branches are matched with `git branch | grep -w <TICKET>`, so passing a prefix
 narrows the deletion: `gitflow ABC-123-track closed` removes the tracking branches
 and leaves `ABC-123` in place. That is the first half of the
 [staging re-sync](troubleshooting.md#staging-was-recreated).
+
+`resolved`, `resolved sync`
+---------------------------
+
+Deprecated, and moved to [docs/deprecated.md](deprecated.md). They split
+`to-staging` into a cherry-pick that stops for review and a commit-and-bookmark
+step. Both still run, and the conflict advice `to-staging` prints still names
+`resolved sync`, which is what finishes a conflicted sync.
 
 Tool commands
 -------------

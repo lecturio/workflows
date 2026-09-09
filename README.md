@@ -19,14 +19,27 @@ branch name.
 The stages
 ----------
 
+Five stages, in the order a ticket runs them:
+
+```
+in-progress  →  pr  →  to-staging  →  deployable  →  closed
+                        (repeat)
+```
+
 ```bash
 gitflow ABC-123 in-progress   # create or switch to the ticket branch
-gitflow ABC-123 to-staging    # put the new commits on staging, in one step
-gitflow ABC-123 resolved      # the same in two steps, when you want to review first
 gitflow ABC-123 pr            # print the pull-request link for review
+gitflow ABC-123 to-staging    # put the new commits on staging
 gitflow ABC-123 deployable    # fold the ticket into production
 gitflow ABC-123 closed        # delete the ticket branches
 ```
+
+Only `to-staging` repeats: you run it again for every round of commits while the
+ticket is being reviewed on staging. The other four happen once per ticket.
+
+`resolved` and `resolved sync` are **deprecated**. They split `to-staging` into
+two steps, and nothing but a conflicted sync needs them now — see
+[docs/deprecated.md](docs/deprecated.md).
 
 One further command acts on the tool itself rather than on a ticket:
 
@@ -84,14 +97,23 @@ Quick start: one ticket, end to end
    gitflow ABC-123 in-progress
    ```
 
-2. **Work.** Commit and push with plain git. The next stage refuses to run while
+2. **Work.** Commit and push with plain git. `to-staging` refuses to run while
    the ticket branch has unpushed commits.
 
    ```bash
    git commit -am "ABC-123 add the thing" && git push
    ```
 
-3. **Put it on staging.** Cherry-picks the commits added since your last sync,
+3. **Open the pull request.** Prints the compare URL into production and runs no
+   git commands. Open it as soon as there is something to read, so the code
+   review runs while the ticket is being tested on staging. The PR is a review
+   vehicle: leave it unmerged, step 5 is what updates production.
+
+   ```bash
+   gitflow ABC-123 pr
+   ```
+
+4. **Put it on staging.** Cherry-picks the commits added since your last sync,
    commits them with a message naming those commits, and stops. The push is
    yours:
 
@@ -101,32 +123,17 @@ Quick start: one ticket, end to end
    git push origin staging
    ```
 
-   Repeat steps 2–3 for as long as the ticket is being reviewed on staging.
+   Repeat steps 2 and 4 for as long as the ticket is being reviewed on staging.
+   The pull request from step 3 picks up the new commits on its own; it does not
+   have to be opened again.
 
    It commits nothing when the cherry-pick conflicts, and nothing when your
    worktree is dirty. Pass `-m "..."` to write the subject yourself; the commits
-   then move into the message body.
+   then move into the message body. When the cherry-pick does conflict, the stage
+   prints the commands that finish it — see
+   [conflicts](docs/troubleshooting.md#conflicts).
 
-4. **When you want to look before it is committed.** `resolved` cherry-picks and
-   stops with the changes staged, `resolved sync` commits them and records the
-   sync. This is also the path out of a conflict:
-
-   ```bash
-   gitflow ABC-123 resolved
-   git status                 # review; resolve conflicts if there are any
-   gitflow ABC-123 resolved sync -m "ABC-123 add the thing"
-   git push origin staging
-   ```
-
-5. **Open a pull request for review.** Prints the compare URL and runs no git
-   commands. The PR is a review vehicle; leave it unmerged, step 6 is what
-   updates production.
-
-   ```bash
-   gitflow ABC-123 pr
-   ```
-
-6. **Ship it.** Rebases the ticket onto production, then moves production onto the
+5. **Ship it.** Rebases the ticket onto production, then moves production onto the
    ticket. Review, then push yourself:
 
    ```bash
@@ -135,7 +142,7 @@ Quick start: one ticket, end to end
    git push origin master
    ```
 
-7. **Clean up.** Deletes the ticket branch and its tracking branches, local and
+6. **Clean up.** Deletes the ticket branch and its tracking branches, local and
    remote, immediately and without asking.
 
    ```bash
@@ -166,5 +173,7 @@ Documentation
   commands it runs, plus `gitflow self update`
 * [docs/troubleshooting.md](docs/troubleshooting.md) — error messages, conflict
   recovery, re-syncing after staging is recreated
+* [docs/deprecated.md](docs/deprecated.md) — `resolved` and `resolved sync`, what
+  replaced them, and the reference kept for the conflict case
 * [Additional commands during feature development](https://github.com/lecturio/workflows/wiki/Additional-commands-during-feature-development) (wiki)
 * [CHANGELOG.md](CHANGELOG.md)
