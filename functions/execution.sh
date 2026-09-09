@@ -68,6 +68,9 @@ function emitgit_sync_branch() {
 # worktree holding changes the switch would overwrite, a branch another
 # worktree has checked out, a name two remotes carry. Silent while it works.
 #
+# What git said is left in output.log either way, so a stage for which the
+# switch is the point rather than plumbing can report it - see in-progress.
+#
 # $1 - the branch, or the arguments of a checkout that creates one
 #      ("-b ABC-123 origin/master")
 #

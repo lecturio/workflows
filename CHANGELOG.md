@@ -19,7 +19,9 @@ Current version: 0.0.4.SNAPSHOT
   stopped on it - `to-staging`, `resolved`, and the bookmark that `to-staging`
   creates - stopped without reporting `BUILD FAILURE`, or without printing
   anything at all, and now do both. The shared checkout says nothing while it
-  works, so `in-progress` no longer prints git's `Switched to branch` line
+  works, since a switch is plumbing in every stage but one: `in-progress`
+  prints the line git wrote for it - `Switched to branch 'ABC-123'`,
+  `Already on 'ABC-123'` - because where you end up is that stage's result
 * `[ERROR]` prefixes every line of a multi-line message. Git's reason for
   refusing reaches the terminal through `print_err`, and only its first line was
   marked, so the advice underneath read as if the tool had stopped talking
