@@ -6,6 +6,11 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* new `skills/gitflow`, a Claude Code skill to copy into a project's
+  `.claude/skills`, so an agent driving the tool knows the order of the stages,
+  which pushes are not its to make, that a run reporting `BUILD FAILURE` can
+  still exit 0, and how to finish a conflicted sync. Nothing in the tool itself
+  changed
 * the documented flow is `in-progress`, `pr`, `to-staging`, `deployable`,
   `closed`, with the pull request opened early so review runs while the ticket is
   tested on staging. `resolved` and `resolved sync` are documented as deprecated -

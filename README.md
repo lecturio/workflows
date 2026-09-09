@@ -164,6 +164,24 @@ WF_STAGING_BRANCH=devel
 Either key may be left out. Keys in the file win over the environment; keys that
 are absent fall back to the environment, then to the defaults above.
 
+Using it from an agent
+----------------------
+
+`skills/gitflow` is a Claude Code skill that teaches an agent this workflow: the
+five stages and what each one leaves behind, the pushes it must not make on your
+behalf, and how to finish a sync that conflicted. Copy it into the project it will
+be used on:
+
+```bash
+mkdir -p /path/to/project/.claude/skills
+cp -R skills/gitflow /path/to/project/.claude/skills/
+```
+
+Commit it there and everyone working on that project gets the same instructions.
+The skill reads nothing from this clone, so there is no path to fix afterwards —
+but it does describe the stages as they stand, so copy it again after an update
+that changes one.
+
 Documentation
 -------------
 
