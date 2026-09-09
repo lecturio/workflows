@@ -27,6 +27,24 @@ function require_no_option() {
 }
 
 #
+# Which git operation this repository has paused, if any. Each one leaves its
+# own marker, and only a cherry-pick is something "resolved sync" can finish.
+#
+function in_flight_operation() {
+	if [[ -d "`git rev-parse --git-path rebase-merge`" ||
+		-d "`git rev-parse --git-path rebase-apply`" ]]; then
+		echo rebase
+	elif git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+		echo merge
+	elif git rev-parse -q --verify REVERT_HEAD >/dev/null 2>&1; then
+		echo revert
+	elif [[ -d "`git rev-parse --git-path sequencer`" ]] ||
+		git rev-parse -q --verify CHERRY_PICK_HEAD >/dev/null 2>&1; then
+		echo cherry-pick
+	fi
+}
+
+#
 # How many commits the in-flight cherry-pick still has queued, the one it
 # stopped on included. Zero when no sequencer state is lying around.
 #
@@ -46,11 +64,31 @@ function pending_pick_count() {
 # a conflict resolution someone is in the middle of.
 #
 function require_clean_start() {
+	local BRANCH="`git rev-parse --abbrev-ref HEAD`"
+	local OP="`in_flight_operation`"
+
+	# A rebase in flight leaves HEAD detached, and "on HEAD" reads like a branch
+	if [ "$BRANCH" == "HEAD" ]; then
+		BRANCH="a detached HEAD"
+	fi
+
+	# Unresolved conflicts, from whichever operation left them. A rebase or a
+	# merge is not something this stage can advise on: pointing at
+	# "resolved sync" there would commit somebody else's resolution onto
+	# staging and bookmark it as if it were the ticket.
 	if [ -n "`git ls-files -u`" ]; then
 		WF_STATUS=1
-		print_err "A cherry-pick with unresolved conflicts is in progress on `git rev-parse --abbrev-ref HEAD`"
-		print_msg "Finish it: fix the files, git add them, then gitflow $WF_TASK resolved sync -m \"message\""
-		print_msg "Or drop it: git cherry-pick --abort"
+		if [ "$OP" == "cherry-pick" ]; then
+			print_err "A cherry-pick with unresolved conflicts is in progress on $BRANCH"
+			print_msg "Finish it: fix the files, git add them, then gitflow $WF_TASK resolved sync -m \"message\""
+			print_msg "Or drop it: git cherry-pick --abort"
+		elif [ -n "$OP" ]; then
+			print_err "A $OP with unresolved conflicts is in progress on $BRANCH"
+			print_msg "Finish it, or abandon it with git $OP --abort, then run to-staging again"
+		else
+			print_err "$BRANCH has unresolved conflicts"
+			print_msg "Resolve or discard them, then run to-staging again"
+		fi
 		print_build_msg
 		exit 1
 	fi
@@ -59,6 +97,31 @@ function require_clean_start() {
 		WF_STATUS=1
 		print_err "Commit or stash your local changes before to-staging"
 		print_msg "It commits to $WF_STAGING_BRANCH without a review stop, so it refuses to sweep them in"
+		print_build_msg
+		exit 1
+	fi
+
+	# The conflicts are resolved but the operation itself is still open, and
+	# git is the only thing that can carry it to the end.
+	case "$OP" in
+		rebase | merge | revert)
+			WF_STATUS=1
+			print_err "A $OP is in progress on $BRANCH"
+			print_msg "Finish it, or abandon it with git $OP --abort, then run to-staging again"
+			print_build_msg
+			exit 1
+			;;
+	esac
+
+	# A cherry-pick run without -n records CHERRY_PICK_HEAD and keeps it until
+	# the commit is made, so this is a pick that is paused with its conflicts
+	# already resolved - "all conflicts fixed: run git cherry-pick --continue".
+	# The stage's own picks never set it, so this is somebody's work by hand.
+	if git rev-parse -q --verify CHERRY_PICK_HEAD >/dev/null 2>&1; then
+		WF_STATUS=1
+		print_err "A cherry-pick is paused on $BRANCH with its conflicts already resolved"
+		print_msg "Finish it: git cherry-pick --continue"
+		print_msg "Or drop it: git cherry-pick --abort"
 		print_build_msg
 		exit 1
 	fi
@@ -75,7 +138,7 @@ function require_clean_start() {
 	if [ "$QUEUED" -gt 1 ]; then
 		WF_STATUS=1
 		let "QUEUED=QUEUED-1"
-		print_err "A cherry-pick on `git rev-parse --abbrev-ref HEAD` still has $QUEUED commit(s) to apply"
+		print_err "A cherry-pick on $BRANCH still has $QUEUED commit(s) to apply"
 		print_msg "Apply them: git cherry-pick --continue   # repeat per conflict"
 		print_msg "Then commit anything it leaves staged: gitflow $WF_TASK resolved sync -m \"message\""
 		print_msg "Or give up on the rest: git cherry-pick --abort"
@@ -83,8 +146,7 @@ function require_clean_start() {
 		exit 1
 	fi
 
-	if [[ "$QUEUED" -gt 0 ]] ||
-		git rev-parse -q --verify CHERRY_PICK_HEAD >/dev/null 2>&1; then
+	if [ "$QUEUED" -gt 0 ]; then
 		emit "git cherry-pick --quit" quiet
 	fi
 }
@@ -134,6 +196,29 @@ function fail_on_conflict() {
 	exit 1
 }
 
+#
+# The cherry-pick failed without leaving a conflict behind, so git has already
+# printed the reason - a merge commit in the range is the usual one, since
+# cherry-pick will not apply one without being told which side to keep.
+# Whatever applied before it is staged, and committing that would put half a
+# range on staging under a bookmark claiming all of it, so the way out is to
+# throw it away rather than to sync it.
+#
+function fail_on_pick_error() {
+	WF_STATUS=1
+	print_err "Cherry-pick onto $WF_STAGING_BRANCH failed - git's reason is above"
+	print_msg "Nothing was committed and no bookmark was made"
+
+	if [ -n "`git log --merges --format=%h -1 "$RANGE"`" ]; then
+		print_msg "$RANGE holds a merge commit, which cherry-pick cannot apply"
+	fi
+
+	print_msg "Throw away what did apply with: git cherry-pick --abort"
+
+	print_build_msg
+	exit 1
+}
+
 require_no_option
 emit_failonerror_pending_commits "$WF_TASK"
 require_clean_start
@@ -156,8 +241,10 @@ print_msg "Cherry-picking $RANGE onto $WF_STAGING_BRANCH"
 emit "git cherry-pick -Xignore-all-space -n $RANGE"
 PICK_STATUS=$?
 
-if [[ $PICK_STATUS -gt 0 || -n "`git ls-files -u`" ]]; then
+if [ -n "`git ls-files -u`" ]; then
 	fail_on_conflict
+elif [ $PICK_STATUS -gt 0 ]; then
+	fail_on_pick_error
 fi
 
 if git diff --cached --quiet; then

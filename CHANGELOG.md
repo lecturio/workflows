@@ -16,8 +16,14 @@ Current version: 0.0.4.SNAPSHOT
   commits and bookmarks, writing a commit message that names the commits it picked
   (`ABC-123 a1b2c3d 4e5f6a7`), and leaves the push to you
 * `to-staging` commits nothing when the cherry-pick conflicts, and refuses to
-  start on a dirty worktree or over an unresolved conflict, so it never folds
-  anything unreviewed into staging
+  start on a dirty worktree or over any half-finished git operation - a
+  cherry-pick, rebase, merge or revert with unresolved conflicts, a cherry-pick
+  paused with its conflicts resolved, or one with commits still queued - so it
+  never folds anything unreviewed into staging and never discards someone's
+  work in progress. It names the operation it found, and only offers
+  `resolved sync` for a cherry-pick, which is the only one that can finish
+* a cherry-pick that fails without a conflict, a merge commit in the range being
+  the usual reason, is reported as itself instead of as a conflict to resolve
 * the tracking-branch lookup matches only exact `origin/<ticket>-track-<number>`
   names, so a ticket whose name ends with another ticket's (`ABC` next to
   `XABC`) or a bookmark on a second remote can no longer be picked as the sync

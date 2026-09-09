@@ -20,6 +20,9 @@ Error messages
 | `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
 | `[ERROR] to-staging takes no option other than -m: gitflow ABC-123 to-staging [-m "message"]` | a word other than the `-m` forms followed the stage | drop it; `sync` belongs to `resolved`, not to this stage, and no other flag is accepted |
 | `[ERROR] A cherry-pick on staging still has 1 commit(s) to apply` | a conflict was resolved and committed, but the rest of the range was never applied | `git cherry-pick --continue`, then `gitflow ABC-123 resolved sync -m "…"`; or `git cherry-pick --abort` to give up on the rest |
+| `[ERROR] A cherry-pick is paused on staging with its conflicts already resolved` | a cherry-pick you started by hand is waiting for `--continue` | finish it with `git cherry-pick --continue`, or drop it with `git cherry-pick --abort` |
+| `[ERROR] A rebase with unresolved conflicts is in progress on …` (or `merge`, `revert`) | another git operation is half-finished; `to-staging` will not commit over it | finish it, or `git rebase --abort` / `git merge --abort` / `git revert --abort` |
+| `[ERROR] Cherry-pick onto staging failed - git's reason is above` | the cherry-pick failed without a conflict, usually a merge commit in the range | read git's message, then `git cherry-pick --abort`; rebase the ticket branch instead of merging into it |
 | `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside `resolved` hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
 

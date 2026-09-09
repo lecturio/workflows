@@ -105,13 +105,23 @@ Leaves you on staging, one commit ahead of `origin/staging`. **The push is
 yours** — the tool prints the `git push origin staging` reminder but does not push.
 
 Because it commits without a stop for review, it refuses to start while the
-worktree has modified tracked files, or while a cherry-pick still holds unresolved
-conflicts, rather than folding either into the staging commit. Untracked files are
-fine. It also refuses while a cherry-pick still has commits queued behind a
-conflict you resolved by hand, since only `git cherry-pick --continue` can apply
-those. State left behind by a cherry-pick that is already finished is cleared with
-`git cherry-pick --quit`, which keeps your index; `--abort`, which rewinds, is
-never run for you.
+worktree has modified tracked files, rather than folding them into the staging
+commit. Untracked files are fine. It also refuses while any git operation is
+still open, and says which one it found:
+
+* unresolved conflicts, from a cherry-pick, a rebase, a merge or a revert. Only
+  for a cherry-pick does it point at `resolved sync`, because that is the only one
+  those commands can finish; for the others it tells you to finish or abandon the
+  operation with git itself.
+* a cherry-pick paused with its conflicts already resolved (`git status`:
+  "all conflicts fixed: run git cherry-pick --continue"). Its own picks never
+  reach that state, so this is work by hand and it is left alone.
+* a cherry-pick with commits still queued behind a conflict you resolved by hand,
+  since only `git cherry-pick --continue` can apply those.
+
+State left behind by a cherry-pick that is already finished is the one thing it
+clears, with `git cherry-pick --quit`, which keeps your index; `--abort`, which
+rewinds, is never run for you.
 
 Anything other than `-m` after the stage name is an error, `sync` included: that
 option belongs to `resolved`.
@@ -139,6 +149,22 @@ offering only the `resolved sync -m` line.
 
 Re-running it while those conflicts are unresolved refuses too, so a half-finished
 resolution is never thrown away.
+
+A cherry-pick can also fail without leaving a conflict, and that is reported
+differently, because there is nothing to resolve:
+
+```
+[ERROR] Cherry-pick onto staging failed - git's reason is above
+[INFO] Nothing was committed and no bookmark was made
+[INFO] origin/master..ABC-123 holds a merge commit, which cherry-pick cannot apply
+[INFO] Throw away what did apply with: git cherry-pick --abort
+```
+
+A merge commit in the range is the usual cause: `git cherry-pick` refuses to apply
+one without being told which side to keep. The commits before it are staged, and
+committing that would put half a range on staging under a bookmark claiming all of
+it, so the stage points at `--abort` instead of at `resolved sync`. Rebase the
+ticket branch instead of merging into it, and the range stays pickable.
 
 `resolved`
 ----------
