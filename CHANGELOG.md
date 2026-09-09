@@ -40,6 +40,14 @@ Current version: 0.0.4.SNAPSHOT
 * bookmarks are read through `git for-each-ref` instead of `git branch`, whose
   output carries colour when `color.branch` is forced and a `*` or `+` in front
   of a checked-out branch, either of which hid an existing bookmark
+* a cherry-pick found in the preflight is only treated as this ticket's sync when
+  it is on staging and applying a commit from the ticket's branch; for anybody
+  else's pick the stage names the commit being applied and hands it back to git,
+  rather than offering a `resolved sync` that would commit their work and
+  bookmark this ticket as synced
+* a `-m` message is trimmed, and one that is empty or all spaces is an error:
+  git strips a blank subject, so such a message committed under the first line
+  of the generated body instead
 * the conflict advice says how to finish when the last commit of a range was the
   one that conflicted: `resolved sync` without `-m`, since `-m` with nothing
   staged fails before it can bookmark

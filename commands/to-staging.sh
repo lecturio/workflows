@@ -26,7 +26,9 @@ function require_no_option() {
 			# the message follows, and every word after it belongs to it
 			ALLOWED=1
 			;;
-		-m?* | --message=?*)
+		-m* | --message=*)
+			# an empty value (-m, --message=) is allowed through so the check
+			# below can say a message is missing rather than call it an option
 			[ "$WF_ARGC" -le 3 ] && ALLOWED=1
 			;;
 	esac
@@ -38,8 +40,12 @@ function require_no_option() {
 		exit 1
 	fi
 
-	# -m with nothing after it would quietly fall back to the generated message,
-	# which is not what someone who typed -m asked for
+	MESSAGE="`trim_whitespace "$MESSAGE"`"
+
+	# -m with nothing after it, or nothing but spaces, would quietly fall back
+	# to the generated message, which is not what someone who typed -m asked
+	# for. git would not keep it either: it strips a blank subject line, and the
+	# first line of the generated body would end up as the subject instead.
 	if [[ -n "$WF_ENV" && -z "$MESSAGE" ]]; then
 		WF_STATUS=1
 		print_err "$WF_ENV needs a message: gitflow $WF_TASK to-staging -m \"message\""
@@ -134,6 +140,54 @@ function stopped_on_merge() {
 }
 
 #
+# Whether the paused cherry-pick is this ticket's own sync. One found in the
+# preflight can belong to another ticket, and naming this ticket's "resolved
+# sync" there would commit somebody else's work onto staging and bookmark this
+# ticket as synced when none of its commits went in - which the next sync then
+# skips for good. A sync of this ticket runs on staging and applies commits from
+# its branch, so the branch and ancestry together decide it.
+#
+function queue_belongs_to_ticket() {
+	local TODO="`git rev-parse --git-path sequencer`/todo"
+	local SHA=
+
+	if [ "`git rev-parse --abbrev-ref HEAD`" != "$WF_STAGING_BRANCH" ]; then
+		return
+	fi
+
+	if ! git rev-parse --verify --quiet "$WF_TASK" >/dev/null 2>&1; then
+		return
+	fi
+
+	if [ -f "$TODO" ]; then
+		SHA=`sed -n '1s/^[a-z][a-z]* \([0-9a-f][0-9a-f]*\).*/\1/p' "$TODO"`
+	else
+		SHA=`git rev-parse -q --verify CHERRY_PICK_HEAD`
+	fi
+
+	if [[ -n "$SHA" ]] && git merge-base --is-ancestor "$SHA" "$WF_TASK" >/dev/null 2>&1; then
+		echo yes
+	fi
+}
+
+#
+# What to say about a cherry-pick that is not this ticket's: nothing this stage
+# offers can finish it, so it stays with git and with whoever started it.
+#
+function print_foreign_pick_advice() {
+	local STOPPED="`stopped_on_commit`"
+
+	if [ -n "$STOPPED" ]; then
+		print_msg "It is applying $STOPPED, which is not part of $WF_TASK"
+	else
+		print_msg "It is not applying anything from $WF_TASK"
+	fi
+
+	print_msg "Finish it with git - git add, git commit, git cherry-pick --continue - or drop it with git cherry-pick --abort"
+	print_msg "Then run to-staging again"
+}
+
+#
 # The way out of a conflicted cherry-pick, which depends on whether the range
 # holds commits after the one that stopped it: --continue keeps the -n the range
 # started with, so those apply staged and uncommitted, and a bookmark taken
@@ -183,8 +237,12 @@ function require_clean_start() {
 		WF_STATUS=1
 		if [ "$OP" == "cherry-pick" ]; then
 			print_err "A cherry-pick with unresolved conflicts is in progress on $BRANCH"
-			print_conflict_recovery "$QUEUED"
-			print_msg "Or drop it: git cherry-pick --abort"
+			if [ -n "`queue_belongs_to_ticket`" ]; then
+				print_conflict_recovery "$QUEUED"
+				print_msg "Or drop it: git cherry-pick --abort"
+			else
+				print_foreign_pick_advice
+			fi
 		elif [ -n "$OP" ]; then
 			print_err "$A $OP with unresolved conflicts is in progress on $BRANCH"
 			print_msg "Finish it, or abandon it with git $OP --abort, then run to-staging again"
@@ -246,6 +304,11 @@ function require_clean_start() {
 	if [[ "$QUEUED" -gt 0 && -n "$DIRTY" ]]; then
 		WF_STATUS=1
 		print_err "A cherry-pick on $BRANCH has a resolution staged but not committed"
+		if [ -z "`queue_belongs_to_ticket`" ]; then
+			print_foreign_pick_advice
+			print_build_msg
+			exit 1
+		fi
 		if [ "$LATER" -gt 0 ]; then
 			print_msg "Commit it, then apply the $LATER commit(s) still queued:"
 			print_msg "  git commit && git cherry-pick --continue     # if one conflicts, fix it, git add, and repeat"
@@ -269,6 +332,11 @@ function require_clean_start() {
 	if [ "$QUEUED" -gt 1 ]; then
 		WF_STATUS=1
 		print_err "A cherry-pick on $BRANCH still has $LATER commit(s) to apply"
+		if [ -z "`queue_belongs_to_ticket`" ]; then
+			print_foreign_pick_advice
+			print_build_msg
+			exit 1
+		fi
 		print_msg "Apply them: git cherry-pick --continue   # if one conflicts, fix it, git add, and repeat"
 		print_msg "Then: gitflow $WF_TASK resolved sync -m \"message\"   # commits what is left staged, then bookmarks"
 		print_msg "Or, when nothing is left staged: gitflow $WF_TASK resolved sync"

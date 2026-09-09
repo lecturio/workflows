@@ -135,6 +135,13 @@ The operation is named before the worktree is called dirty, because a resolution
 that is staged looks exactly like local changes of your own, and "commit or stash"
 is the one thing not to do in the middle of a rebase.
 
+A cherry-pick it finds this way need not be its own. `resolved sync` is offered
+only when the pick is on staging and applying a commit that belongs to the ticket
+you named; otherwise the pick is somebody else's, and following ticket-specific
+advice would commit their work and bookmark your ticket as synced when none of its
+commits went in. For those the stage names the commit being applied and hands the
+pick back to git.
+
 State left behind by a cherry-pick that is already finished is the one thing it
 clears, with `git cherry-pick --quit`, which keeps your index; `--abort`, which
 rewinds, is never run for you.
@@ -142,7 +149,10 @@ rewinds, is never run for you.
 Anything other than `-m` after the stage name is an error, `sync` included: that
 option belongs to `resolved`. `-m message` takes every word after it, so an
 attached `-mmessage` or `--message=message` must be the last argument — anything
-following one of those is rejected rather than ignored.
+following one of those is rejected rather than ignored. The message is trimmed,
+and one that is empty or nothing but spaces is an error: git strips a blank
+subject line, so it would silently commit under the first line of the generated
+body instead.
 
 On conflict nothing is committed and no tracking branch is created. The conflicted
 cherry-pick is left in place, and the message names the commit it stopped on along
