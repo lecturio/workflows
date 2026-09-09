@@ -24,6 +24,12 @@ current directory to be inside a git clone, reads that repo's `origin` URL, load
 project. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`. Output of the
 noisier commands is written to `output.log` in the tool's own directory.
 
+Every stage works on a branch it checks out first, and acts on whatever is
+checked out afterwards, so a checkout that fails ends the run then and there with
+git's own reason under `[ERROR]`. The usual causes are a worktree holding changes
+the switch would overwrite, a branch another `git worktree` has, and a branch name
+two remotes carry while you have no local copy.
+
 Examples below use `ABC-123` as the ticket and the default branch names.
 
 `in-progress`
@@ -265,10 +271,10 @@ git push origin --delete ABC-123 ABC-123-track-1 …   # all matching remote bra
 git branch -D ABC-123 ABC-123-track-1 …              # all matching local branches
 ```
 
-The checkout comes first and has to work: git will not delete the branch you are
+The checkout comes first for a reason: git will not delete the branch you are
 standing on, and the remote copy goes first, so a ticket branch you cannot leave
-would be deleted on origin and kept locally. A worktree holding changes the switch
-would overwrite ends the run before anything is deleted.
+would be deleted on origin and kept locally. A checkout that fails ends the run
+before anything is deleted.
 
 Branches are matched on the ticket as a whole word inside the branch name, so
 passing a prefix narrows the deletion: `gitflow ABC-123-track closed` removes the

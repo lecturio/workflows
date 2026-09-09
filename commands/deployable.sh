@@ -6,7 +6,7 @@ emit "git rebase --abort" quiet
 # sync branch
 #
 __setup_branch() {
-	emit "git checkout $1" quiet
+	emitgit_checkout "$1"
 	emit_failonerror "git pull --rebase origin $1" print_msg
 }
 
@@ -15,7 +15,7 @@ __setup_branch() {
 # $2 - rebase to given branch
 #
 __merge_branch() {
-	emit "git checkout $1" quiet
+	emitgit_checkout "$1"
 	emit_failonerror "git rebase -Xignore-all-space $2"
 }
 

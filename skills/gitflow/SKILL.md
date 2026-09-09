@@ -196,7 +196,7 @@ When a run fails
 | `[ERROR] Local changes need to be pushed to ABC-123` | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | commit the modified tracked files on the ticket branch, then re-run |
 | `[ERROR] Configured branch origin/staging does not exist` | stop and ask. The deployed branches must already exist on `origin`; the tool never creates them |
-| `[ERROR] Could not check out master - nothing was deleted` | `closed` could not leave the branch it is asked to delete. Run `git checkout master` for git's reason - a dirty worktree is the usual one - and let the user decide what to do with what is in the way |
+| `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on and stopped before touching anything. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
 | `Available commands are: …` | the stage name was wrong — it is `deployable`, not `deployed` |
 | anything naming a cherry-pick, a rebase, a merge, a revert or a conflict | [conflicts.md](conflicts.md) |
 

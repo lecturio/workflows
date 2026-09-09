@@ -55,6 +55,27 @@ function emitgit_sync_branch() {
 }
 
 #
+# Check a branch out, or end the run reporting why.
+#
+# Every stage acts on the branch it has just checked out - deletes it, rebases
+# it, commits onto it - so a checkout whose failure is discarded leaves the
+# commands after it running against whatever HEAD happens to be. That is how
+# `closed` deleted the ticket from origin while keeping it locally, and how
+# `deployable` rebased the ticket onto itself twice and reported BUILD SUCCESS
+# with production untouched.
+#
+# git's own reason is printed, because the causes need different answers: a
+# worktree holding changes the switch would overwrite, a branch another
+# worktree has checked out, a name two remotes carry. Silent while it works.
+#
+# $1 - the branch, or the arguments of a checkout that creates one
+#      ("-b ABC-123 origin/master")
+#
+function emitgit_checkout() {
+	emit_failonerror "git checkout $1" print_msg
+}
+
+#
 # Checks if branch is in local repository.
 # $1 - branch to be checked
 #

@@ -7,12 +7,12 @@ EXISTS_LOCALLY=$?
 EXISTS_REMOTELY=`emit "git branch -r --list origin/${WF_TASK}"`
 
 if [ $EXISTS_LOCALLY -eq 0 ]; then
-	emit "git checkout $WF_TASK" print_msg
+	emitgit_checkout "$WF_TASK"
 else
 	if [ $EXISTS_REMOTELY ]; then
-		emit "git checkout -b $WF_TASK origin/$WF_TASK" print_msg
+		emitgit_checkout "-b $WF_TASK origin/$WF_TASK"
 	else
-		emit "git checkout -b $WF_TASK origin/$WF_PROD_BRANCH" print_msg
+		emitgit_checkout "-b $WF_TASK origin/$WF_PROD_BRANCH"
 		emit "git push origin $WF_TASK" print_msg
 		emit "git branch -u origin/$WF_TASK" print_msg
 	fi

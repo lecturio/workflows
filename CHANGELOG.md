@@ -6,11 +6,24 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
-* `closed` starts by checking production out, and a failure there ends the run
-  instead of being discarded. Git refuses to delete the branch that is checked
-  out and the remote copy is deleted first, so a worktree that could not be left
-  - changes the switch would overwrite - had the ticket deleted on origin, kept
-  locally, and `BUILD SUCCESS` reported over both
+* every checkout goes through one function, `emitgit_checkout`, and a checkout
+  that fails now ends the run with git's reason under `[ERROR]`. Each stage acts
+  on the branch it has just checked out, and the failures were discarded, so the
+  commands after them ran against whatever was checked out instead: `closed`
+  deleted the ticket from origin and kept it locally, and `deployable` - both of
+  its helpers switched branches quiet - rebased the ticket onto itself twice and
+  reported `BUILD SUCCESS` with production untouched, which is the run whose
+  `git push origin master` ships nothing. A clean worktree is no protection: a
+  branch another `git worktree` has checked out, or a name two remotes carry
+  while there is no local copy, fails the same way. The stages that already
+  stopped on it - `to-staging`, `resolved`, and the bookmark that `to-staging`
+  creates - stopped without reporting `BUILD FAILURE`, or without printing
+  anything at all, and now do both. The shared checkout says nothing while it
+  works, so `in-progress` no longer prints git's `Switched to branch` line
+* `[ERROR]` prefixes every line of a multi-line message. Git's reason for
+  refusing reaches the terminal through `print_err`, and only its first line was
+  marked, so the advice underneath read as if the tool had stopped talking
+  mid-message
 * `closed` no longer deletes branches it was not asked to delete. It read the
   branch list through `git branch`, whose `* ` marker for the checked-out branch
   glob-expanded against the repository root, so a root holding files named

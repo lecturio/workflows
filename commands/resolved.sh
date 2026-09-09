@@ -4,7 +4,7 @@
 function sync_feature_changes() {
 	local CHERRY_PICK="$(cherry_pick_range)"
 
-	emit "git checkout $WF_STAGING_BRANCH" quiet
+	emitgit_checkout "$WF_STAGING_BRANCH"
 	#emit "git rev-list --reverse ${CHERRY_PICK} | git cherry-pick -n --stdin"
 	emit "git cherry-pick -Xignore-all-space -n ${CHERRY_PICK}" 
 	print_msg "Check your changes before commit- possible data loss if merge is incorrect"
