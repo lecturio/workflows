@@ -37,6 +37,16 @@ function require_no_option() {
 		print_build_msg
 		exit 1
 	fi
+
+	# -m with nothing after it would quietly fall back to the generated message,
+	# which is not what someone who typed -m asked for
+	if [[ -n "$WF_ENV" && -z "$MESSAGE" ]]; then
+		WF_STATUS=1
+		print_err "$WF_ENV needs a message: gitflow $WF_TASK to-staging -m \"message\""
+		print_msg "Leave it out to let the stage name the commits it picked"
+		print_build_msg
+		exit 1
+	fi
 }
 
 #
@@ -56,7 +66,11 @@ function sequencer_verb() {
 # own marker, and only a cherry-pick is something "resolved sync" can finish.
 #
 function in_flight_operation() {
-	if [[ -d "`git rev-parse --git-path rebase-merge`" ||
+	if [ -f "`git rev-parse --git-path rebase-apply/applying`" ]; then
+		# git am keeps its state in rebase-apply too, and only this marker
+		# separates the two: "git rebase --abort" is not the way out of an am
+		echo am
+	elif [[ -d "`git rev-parse --git-path rebase-merge`" ||
 		-d "`git rev-parse --git-path rebase-apply`" ]]; then
 		echo rebase
 	elif git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
@@ -131,9 +145,10 @@ function print_conflict_recovery() {
 
 	print_msg "Fix the conflicted files and \"git add\" them, then:"
 	if [ "$LATER" -gt 0 ]; then
-		print_msg "  git commit && git cherry-pick --continue     # $LATER more commit(s) to apply, repeat per conflict"
+		print_msg "  git commit && git cherry-pick --continue     # $LATER more commit(s); if one conflicts, fix it, git add, and repeat"
 		print_msg "  git status                                   # -n leaves the ones that applied cleanly staged"
 		print_msg "  gitflow $WF_TASK resolved sync -m \"message\"   # commits what is staged, then bookmarks"
+		print_msg "  gitflow $WF_TASK resolved sync                # instead of the line above when nothing is left staged"
 	else
 		print_msg "  gitflow $WF_TASK resolved sync -m \"message\"   # commits and bookmarks"
 	fi
@@ -149,6 +164,11 @@ function require_clean_start() {
 	local OP="`in_flight_operation`"
 	local QUEUED="`pending_pick_count`"
 	local LATER=$(( QUEUED - 1 ))
+	local A="A"
+
+	if [ "$OP" == "am" ]; then
+		A="An"
+	fi
 
 	# A rebase in flight leaves HEAD detached, and "on HEAD" reads like a branch
 	if [ "$BRANCH" == "HEAD" ]; then
@@ -166,7 +186,7 @@ function require_clean_start() {
 			print_conflict_recovery "$QUEUED"
 			print_msg "Or drop it: git cherry-pick --abort"
 		elif [ -n "$OP" ]; then
-			print_err "A $OP with unresolved conflicts is in progress on $BRANCH"
+			print_err "$A $OP with unresolved conflicts is in progress on $BRANCH"
 			print_msg "Finish it, or abandon it with git $OP --abort, then run to-staging again"
 		else
 			print_err "$BRANCH has unresolved conflicts"
@@ -182,9 +202,9 @@ function require_clean_start() {
 	# exactly like local changes of your own, and "commit or stash" is the one
 	# thing you must not do in the middle of a rebase.
 	case "$OP" in
-		rebase | merge | revert)
+		rebase | merge | revert | am)
 			WF_STATUS=1
-			print_err "A $OP is in progress on $BRANCH"
+			print_err "$A $OP is in progress on $BRANCH"
 			print_msg "Finish it, or abandon it with git $OP --abort, then run to-staging again"
 			print_build_msg
 			exit 1
@@ -228,8 +248,9 @@ function require_clean_start() {
 		print_err "A cherry-pick on $BRANCH has a resolution staged but not committed"
 		if [ "$LATER" -gt 0 ]; then
 			print_msg "Commit it, then apply the $LATER commit(s) still queued:"
-			print_msg "  git commit && git cherry-pick --continue     # repeat per conflict"
+			print_msg "  git commit && git cherry-pick --continue     # if one conflicts, fix it, git add, and repeat"
 			print_msg "  gitflow $WF_TASK resolved sync -m \"message\"   # commits what is left staged, then bookmarks"
+			print_msg "  gitflow $WF_TASK resolved sync                # instead of the line above when nothing is left staged"
 		else
 			print_msg "Commit it and bookmark the round: gitflow $WF_TASK resolved sync -m \"message\""
 		fi
@@ -248,8 +269,9 @@ function require_clean_start() {
 	if [ "$QUEUED" -gt 1 ]; then
 		WF_STATUS=1
 		print_err "A cherry-pick on $BRANCH still has $LATER commit(s) to apply"
-		print_msg "Apply them: git cherry-pick --continue   # repeat per conflict"
-		print_msg "Then commit anything it leaves staged: gitflow $WF_TASK resolved sync -m \"message\""
+		print_msg "Apply them: git cherry-pick --continue   # if one conflicts, fix it, git add, and repeat"
+		print_msg "Then: gitflow $WF_TASK resolved sync -m \"message\"   # commits what is left staged, then bookmarks"
+		print_msg "Or, when nothing is left staged: gitflow $WF_TASK resolved sync"
 		print_msg "Or give up on the rest: git cherry-pick --abort"
 		print_build_msg
 		exit 1

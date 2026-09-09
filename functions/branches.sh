@@ -36,13 +36,15 @@ function track_branch_ns() {
 # the namespace loosely picked up another ticket whose name ends with this one
 # (origin/XABC-track-9 while syncing ABC) and bookmarks on other remotes
 # (upstream/ABC-track-77), and either one becomes a range git cannot resolve.
-# Plain git, not emit(): emit() is for the commands that change something.
+# Read through for-each-ref rather than "git branch", which decorates its output
+# - colour when color.branch is forced to always, "*" or "+" in front of a
+# checked-out branch - and a decorated line matches none of this.
 #
 function highest_track_num() {
 	local TRACK_NS="$(track_branch_ns)"
 
-	git branch -r --list "origin/${TRACK_NS}*" |\
-		sed -n "s|^[[:space:]]*origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p" |\
+	git for-each-ref --format='%(refname:short)' "refs/remotes/origin/${TRACK_NS}*" |\
+		sed -n "s|^origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p" |\
 		sort -nr | head -1
 }
 
@@ -57,11 +59,11 @@ function highest_track_num() {
 #
 function next_track_num() {
 	local TRACK_NS="$(track_branch_ns)"
-	local HIGHEST=$( { git branch --list "${TRACK_NS}*" |\
-			sed -n "s|^[* ]*${TRACK_NS}\([0-9][0-9]*\)$|\1|p"
-		git branch -r --list "origin/${TRACK_NS}*" |\
-			sed -n "s|^[[:space:]]*origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p"
-		} | sort -nr | head -1 )
+	local HIGHEST=$(git for-each-ref --format='%(refname:short)' \
+			"refs/heads/${TRACK_NS}*" "refs/remotes/origin/${TRACK_NS}*" |\
+		sed -n -e "s|^${TRACK_NS}\([0-9][0-9]*\)$|\1|p" \
+			-e "s|^origin/${TRACK_NS}\([0-9][0-9]*\)$|\1|p" |\
+		sort -nr | head -1)
 
 	if [ "$HIGHEST" == "" ]; then
 		HIGHEST=0

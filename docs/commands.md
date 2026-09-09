@@ -109,7 +109,9 @@ worktree has modified tracked files, rather than folding them into the staging
 commit. Untracked files are fine. It also refuses while any git operation is
 still open, and says which one it found:
 
-* unresolved conflicts, from a cherry-pick, a rebase, a merge or a revert. Only
+* unresolved conflicts, from a cherry-pick, a rebase, a merge, a revert or an
+  interrupted `git am` (which keeps its state where a rebase does, and is told
+  apart by the `rebase-apply/applying` marker so the advice names `git am`). Only
   for a cherry-pick does it point at `resolved sync`, because that is the only one
   those commands can finish; for the others it tells you to finish or abandon the
   operation with git itself. A revert of several commits runs through the same
@@ -150,9 +152,10 @@ with anything still queued behind it:
 [ERROR] Cherry-pick onto staging conflicts - nothing was committed
 [INFO] Stopped on 2654521 ABC-123 conflicting edit
 [INFO] Fix the conflicted files and "git add" them, then:
-[INFO]   git commit && git cherry-pick --continue     # 1 more commit(s) to apply, repeat per conflict
+[INFO]   git commit && git cherry-pick --continue     # 1 more commit(s); if one conflicts, fix it, git add, and repeat
 [INFO]   git status                                   # -n leaves the ones that applied cleanly staged
 [INFO]   gitflow ABC-123 resolved sync -m "message"   # commits what is staged, then bookmarks
+[INFO]   gitflow ABC-123 resolved sync                # instead of the line above when nothing is left staged
 [INFO] Or start over with: git cherry-pick --abort
 ```
 
@@ -220,9 +223,10 @@ the resolved changes sit staged and uncommitted, which is exactly what `-n` leav
 you with, so commit first:
 
 ```bash
-git commit && git cherry-pick --continue      # repeat for each further conflict
+git commit && git cherry-pick --continue      # for each further conflict: fix, git add, repeat
 git status                                    # commits that applied cleanly are staged
 gitflow ABC-123 resolved sync -m "…"          # commits them, then bookmarks
+gitflow ABC-123 resolved sync                 # use this when nothing is left staged
 ```
 
 `--continue` keeps the `-n`, so the commits after the conflicted one land staged

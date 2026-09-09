@@ -33,7 +33,16 @@ Current version: 0.0.4.SNAPSHOT
   it is printed, so a bookmark is never suggested before the rest of the range
   is applied
 * an attached `-mmessage` or `--message=message` must be the last argument;
-  anything after it is rejected instead of silently ignored
+  anything after it is rejected instead of silently ignored, and `-m` with no
+  message at all is an error rather than a silent fall back to the generated one
+* an interrupted `git am` is named as one: it keeps its state where a rebase
+  does, so the advice used to say `git rebase --abort`
+* bookmarks are read through `git for-each-ref` instead of `git branch`, whose
+  output carries colour when `color.branch` is forced and a `*` or `+` in front
+  of a checked-out branch, either of which hid an existing bookmark
+* the conflict advice says how to finish when the last commit of a range was the
+  one that conflicted: `resolved sync` without `-m`, since `-m` with nothing
+  staged fails before it can bookmark
 * a bookmark whose push was refused no longer wedges the ticket: the next number
   is counted over local branches as well as origin's, so the stage numbers past
   the stray instead of stopping at "a branch named ABC-123-track-1 already

@@ -44,11 +44,18 @@ git push origin staging
 ```
 
 ```bash
-git commit && git cherry-pick --continue      # commits were, repeat per conflict
+git commit && git cherry-pick --continue      # if a later commit conflicts, fix it, git add, repeat
 git status                                    # see what the continue left staged
 gitflow ABC-123 resolved sync -m "…"          # commits that, then bookmarks
 git push origin staging
 ```
+
+Use `gitflow ABC-123 resolved sync` **without** `-m` when that `git status` comes
+back clean, which is what happens when the last commit of the range was the one
+that conflicted and you committed the resolution yourself. With `-m` and nothing
+staged, `git commit -am` fails, the stage stops at `BUILD FAILURE`, and no
+bookmark is written — leaving staging holding the work while the ticket looks
+unsynced.
 
 Neither commit in the second form is optional. The cherry-pick runs with `-n`, so
 the resolved changes sit staged and uncommitted, and `git cherry-pick --continue`
@@ -57,10 +64,13 @@ overwritten by cherry-pick`. For the same reason the commits that then apply
 cleanly are left staged, so the sync needs `-m` to commit them: without it the
 bookmark would move as if they were on staging while they are only staged.
 
-Re-running `to-staging` while the conflict is unresolved refuses and changes
-nothing, so it cannot eat a half-finished resolution. Once the resolution is
-committed, the sequencer state git leaves behind is cleared by the next
-`to-staging` with `git cherry-pick --quit`, which keeps your index.
+Re-running `to-staging` at any point during this refuses and changes nothing, so
+it cannot eat a half-finished resolution: while conflicts are unresolved, while a
+resolution sits staged, and while commits are still queued behind one. Each of
+those gets its own message naming what is left to do. Only when the resolution
+was the last commit of the range and has been committed does the sequencer state
+git leaves behind get cleared, with `git cherry-pick --quit`, which keeps your
+index.
 
 **During `deployable`** you are in a rebase. `git status` names the branch being
 rebased, which tells you whether you are in the first rebase (ticket onto
