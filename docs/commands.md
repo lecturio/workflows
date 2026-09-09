@@ -136,11 +136,14 @@ that is staged looks exactly like local changes of your own, and "commit or stas
 is the one thing not to do in the middle of a rebase.
 
 A cherry-pick it finds this way need not be its own. `resolved sync` is offered
-only when the pick is on staging and applying a commit that belongs to the ticket
-you named; otherwise the pick is somebody else's, and following ticket-specific
-advice would commit their work and bookmark your ticket as synced when none of its
-commits went in. For those the stage names the commit being applied and hands the
-pick back to git.
+only when the pick is on staging and applying one of the commits in this ticket's
+own sync range; otherwise the pick is somebody else's, and following
+ticket-specific advice would commit their work and bookmark your ticket as synced
+when none of its commits went in. Being reachable from the ticket branch is not
+enough — every commit of production is — so it is the range that decides. For a
+pick that is not this ticket's, the stage names the commit being applied and hands
+it back to git, with the next step matched to where the pick stands: `--continue`
+on a clean tree, a commit first when a resolution is staged.
 
 State left behind by a cherry-pick that is already finished is the one thing it
 clears, with `git cherry-pick --quit`, which keeps your index; `--abort`, which

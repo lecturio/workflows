@@ -144,8 +144,10 @@ function stopped_on_merge() {
 # preflight can belong to another ticket, and naming this ticket's "resolved
 # sync" there would commit somebody else's work onto staging and bookmark this
 # ticket as synced when none of its commits went in - which the next sync then
-# skips for good. A sync of this ticket runs on staging and applies commits from
-# its branch, so the branch and ancestry together decide it.
+# skips for good. A sync of this ticket runs on staging and applies exactly the
+# commits of its range, so the branch and that range decide it. Ancestry is not
+# enough: every commit of production is an ancestor of the ticket branch too,
+# and a pick of one of those is nothing to do with this ticket.
 #
 function queue_belongs_to_ticket() {
 	local TODO="`git rev-parse --git-path sequencer`/todo"
@@ -165,7 +167,16 @@ function queue_belongs_to_ticket() {
 		SHA=`git rev-parse -q --verify CHERRY_PICK_HEAD`
 	fi
 
-	if [[ -n "$SHA" ]] && git merge-base --is-ancestor "$SHA" "$WF_TASK" >/dev/null 2>&1; then
+	if [ -z "$SHA" ]; then
+		return
+	fi
+
+	local FULL=`git rev-parse -q --verify "${SHA}^{commit}"`
+	if [ -z "$FULL" ]; then
+		return
+	fi
+
+	if git rev-list "`cherry_pick_range`" 2>/dev/null | grep -qx "$FULL"; then
 		echo yes
 	fi
 }
@@ -183,7 +194,21 @@ function print_foreign_pick_advice() {
 		print_msg "It is not applying anything from $WF_TASK"
 	fi
 
-	print_msg "Finish it with git - git add, git commit, git cherry-pick --continue - or drop it with git cherry-pick --abort"
+	# what is left to do depends on where the pick stands: with nothing staged
+	# there is nothing to add or commit, and git commit would fail
+	case "$1" in
+		unresolved)
+			print_msg "Fix the files, git add them, git commit, then git cherry-pick --continue"
+			;;
+		staged)
+			print_msg "Commit what is staged, then git cherry-pick --continue"
+			;;
+		*)
+			print_msg "Carry it on with git cherry-pick --continue"
+			;;
+	esac
+
+	print_msg "Or drop it with git cherry-pick --abort"
 	print_msg "Then run to-staging again"
 }
 
@@ -241,7 +266,7 @@ function require_clean_start() {
 				print_conflict_recovery "$QUEUED"
 				print_msg "Or drop it: git cherry-pick --abort"
 			else
-				print_foreign_pick_advice
+				print_foreign_pick_advice unresolved
 			fi
 		elif [ -n "$OP" ]; then
 			print_err "$A $OP with unresolved conflicts is in progress on $BRANCH"
@@ -305,7 +330,7 @@ function require_clean_start() {
 		WF_STATUS=1
 		print_err "A cherry-pick on $BRANCH has a resolution staged but not committed"
 		if [ -z "`queue_belongs_to_ticket`" ]; then
-			print_foreign_pick_advice
+			print_foreign_pick_advice staged
 			print_build_msg
 			exit 1
 		fi
@@ -333,7 +358,7 @@ function require_clean_start() {
 		WF_STATUS=1
 		print_err "A cherry-pick on $BRANCH still has $LATER commit(s) to apply"
 		if [ -z "`queue_belongs_to_ticket`" ]; then
-			print_foreign_pick_advice
+			print_foreign_pick_advice clean
 			print_build_msg
 			exit 1
 		fi
