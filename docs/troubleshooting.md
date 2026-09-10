@@ -31,6 +31,10 @@ Error messages
 | `[ERROR] A revert is in progress on staging` | a `git revert` of several commits is half-finished; its queue outlives `REVERT_HEAD` | `git revert --continue`, or `git revert --abort` |
 | `[ERROR] remote: rejecting refs/heads/ABC-123-track-N` | the remote refused the bookmark push, e.g. a protected-ref rule | the local bookmark stays behind and the next sync numbers past it, so fix the rule and re-run; delete the stray with `git branch -D ABC-123-track-N` if you want the numbers tidy |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
+| `[ERROR] staging is a deployed branch and is never deleted` | the ticket slot of `closed` named production or staging | pass a ticket; those two branches are not deletable through the tool |
+| `[ERROR] Nothing deleted: that needs a confirmation and there is no terminal to ask on` | some branch `closed` matched has commits `origin/master` has not got, and the run has no terminal to ask on | check the listed branches, then run `gitflow ABC-123 closed` yourself and answer `y` |
+| `[ERROR] Nothing deleted` | the confirmation was answered with anything but `y` or `Y` | nothing was deleted; re-run when you mean it |
+| `[ERROR] error: Your local changes … would be overwritten by checkout` / `[ERROR] fatal: 'master' is already used by worktree at …` | a stage could not check out the branch it works on, and stopped rather than act on the branch you are standing on | git's reason is in the message: commit or stash what is in the way, or free the branch from the other worktree, then re-run |
 
 Conflicts
 ---------
@@ -130,8 +134,10 @@ gitflow ABC-123 to-staging
 git push origin staging
 ```
 
-The first command deletes immediately and leaves `ABC-123` itself alone, because
-it only matches branch names containing `ABC-123-track`.
+The first command leaves `ABC-123` itself alone, because it only matches branch
+names containing `ABC-123-track`. It asks before deleting, since the ticket has
+not reached production and the bookmarks read as unmerged; the commits are all on
+`ABC-123`, which the command does not touch, so answer `y`.
 
 Shell completion
 ----------------

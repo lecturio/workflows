@@ -6,6 +6,68 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* every checkout goes through one function, `emitgit_checkout`, and a checkout
+  that fails now ends the run with git's reason under `[ERROR]`. Each stage acts
+  on the branch it has just checked out, and the failures were discarded, so the
+  commands after them ran against whatever was checked out instead: `closed`
+  deleted the ticket from origin and kept it locally, and `deployable` - both of
+  its helpers switched branches quiet - rebased the ticket onto itself twice and
+  reported `BUILD SUCCESS` with production untouched, which is the run whose
+  `git push origin master` ships nothing. A clean worktree is no protection: a
+  branch another `git worktree` has checked out, or a name two remotes carry
+  while there is no local copy, fails the same way. The stages that already
+  stopped on it - `to-staging`, `resolved`, and the bookmark that `to-staging`
+  creates - stopped without reporting `BUILD FAILURE`, or without printing
+  anything at all, and now do both. The shared checkout says nothing while it
+  works, since a switch is plumbing in every stage but one: `in-progress`
+  prints the line git wrote for it - `Switched to branch 'ABC-123'`,
+  `Already on 'ABC-123'` - because where you end up is that stage's result
+* `[ERROR]` prefixes every line of a multi-line message. Git's reason for
+  refusing reaches the terminal through `print_err`, and only its first line was
+  marked, so the advice underneath read as if the tool had stopped talking
+  mid-message
+* `closed` deletes through git's argument list instead of a command string that
+  `emit` re-parses. Git allows `;`, `$( )` and backticks in a ref name, so a
+  branch pushed to origin as `ABC-123;id` ran `id` on the machine of whoever
+  closed the ticket. The two deletions also report: a remote that refuses the
+  push - a protected-ref rule, a lost race - ends the run with `BUILD FAILURE`
+  and the local branches still in place, where before the local deletion went
+  ahead regardless and the run claimed success
+* `closed` reads branch names by component count, `%(refname:lstrip=2)` and
+  `lstrip=3`, rather than `%(refname:short)`, which shortens only as far as
+  stays unambiguous: with a local branch named `origin/ABC-123` in the
+  repository, short reports `heads/origin/ABC-123` and `remotes/origin/ABC-123`,
+  neither of which git will delete, so nothing was deleted on either side and
+  the run still reported `BUILD SUCCESS`
+* `closed` names refs in full where it weighs a branch, and deletes on origin
+  through `refs/heads/`. A short name is resolved by precedence - a tag before a
+  local branch, a local branch before a remote-tracking one - so a tag called
+  `ABC-123`, or a local branch called `origin/ABC-123`, answered for the branch
+  being weighed and the ticket was deleted without the confirmation its commits
+  had earned; and origin carrying a tag named like the branch made the whole
+  delete "dst refspec matches more than one". `git branch -D` keeps bare names,
+  which are the only ones it accepts
+* the confirmation in `closed` counts what it cannot vouch for. `git cherry`
+  walks past merge commits, and a merge can carry a resolution that is in
+  neither parent, so a branch whose only unshared work sat in one was deleted
+  without asking; merges in the range are now counted on their own. A patch
+  comparison that fails at all counts as unmerged, where the error used to be
+  discarded and read as nothing to lose
+* `closed` no longer deletes branches it was not asked to delete. It read the
+  branch list through `git branch`, whose `* ` marker for the checked-out branch
+  glob-expanded against the repository root, so a root holding files named
+  `master` and `staging` had those local branches deleted; the names are now read
+  through `git for-each-ref`, which prints them bare. Production and staging are
+  never deleted, in the ticket slot (`gitflow staging closed` removed the shared
+  branch from origin and reported `BUILD SUCCESS`) or as something the ticket
+  matched. Deleting a branch that holds commits `origin/master` has not got - an
+  unpushed `deployable`, work that never landed - now lists them and waits for a
+  `y`, and stops with `BUILD FAILURE` when there is no terminal to ask on.
+  Remote branches are origin's alone, without `origin/HEAD` and without any
+  second remote, whose refs used to abort the whole push; and names are passed to
+  `git push origin --delete` as they are, instead of being rewritten with `sed`,
+  which had turned local `feat/ABC-123` into two branches that do not exist and
+  rewrote any name containing `origin`
 * `resolved sync` refuses unless the staging branch is checked out. It commits
   where HEAD stands and bookmarks the ticket as synced either way, so a run from
   a ticket branch put the round there and still recorded the ticket as synced,

@@ -24,6 +24,12 @@ current directory to be inside a git clone, reads that repo's `origin` URL, load
 project. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`. Output of the
 noisier commands is written to `output.log` in the tool's own directory.
 
+Every stage works on a branch it checks out first, and acts on whatever is
+checked out afterwards, so a checkout that fails ends the run then and there with
+git's own reason under `[ERROR]`. The usual causes are a worktree holding changes
+the switch would overwrite, a branch another `git worktree` has, and a branch name
+two remotes carry while you have no local copy.
+
 Examples below use `ABC-123` as the ticket and the default branch names.
 
 `in-progress`
@@ -253,8 +259,7 @@ it aborts first.
 `closed`
 --------
 
-Deletes the ticket's branches, local and remote. **It deletes immediately, with no
-confirmation and no undo.**
+Deletes the ticket's branches, local and remote.
 
 ```bash
 gitflow ABC-123 closed
@@ -262,14 +267,42 @@ gitflow ABC-123 closed
 
 ```bash
 git checkout master
-git push origin :ABC-123 :ABC-123-track-1 …   # all matching remote branches
-git branch -D ABC-123 ABC-123-track-1 …       # all matching local branches
+git push origin --delete ABC-123 ABC-123-track-1 …   # all matching remote branches
+git branch -D ABC-123 ABC-123-track-1 …              # all matching local branches
 ```
 
-Branches are matched with `git branch | grep -w <TICKET>`, so passing a prefix
-narrows the deletion: `gitflow ABC-123-track closed` removes the tracking branches
-and leaves `ABC-123` in place. That is the first half of the
-[staging re-sync](troubleshooting.md#staging-was-recreated).
+The checkout comes first for a reason: git will not delete the branch you are
+standing on, and the remote copy goes first, so a ticket branch you cannot leave
+would be deleted on origin and kept locally. A checkout that fails ends the run
+before anything is deleted.
+
+Branches are matched on the ticket as a whole word inside the branch name, so
+passing a prefix narrows the deletion: `gitflow ABC-123-track closed` removes the
+tracking branches and leaves `ABC-123` in place. That is the first half of the
+[staging re-sync](troubleshooting.md#staging-was-recreated). Only `origin` is
+searched for the remote branches, so a second remote keeps its copies.
+
+The deployed branches are never deleted. `gitflow staging closed` and
+`gitflow master closed` are refused, and a ticket that happens to match one of
+them — `release` against `WF_PROD_BRANCH=release/1.2` — takes every other branch
+it matched and leaves those two.
+
+**Everything else it deletes, it deletes for good.** The one thing it stops for is
+a branch holding commits `origin/master` has not got, which is what an unpushed
+`deployable` or work that never landed looks like:
+
+```
+[INFO] Commits not in origin/master: ABC-123 origin/ABC-123
+[INFO] Delete anyway? [y/N] y
+```
+
+Only `y` or `Y` goes ahead; anything else deletes nothing and reports
+`BUILD FAILURE`. Commits are weighed by patch, so the rebase in `deployable` and
+the cherry-picks in `to-staging` do not make a branch look unmerged for having
+different SHAs than production. Merge commits are counted whole, since the patch
+comparison walks past them and a merge can carry a resolution that is in neither
+of its parents, and a comparison that cannot be made at all counts as unmerged. When there is no terminal to ask on — a script, a pipe, an agent — the
+run stops with the same list and deletes nothing, and you run it again by hand.
 
 `resolved`, `resolved sync`
 ---------------------------

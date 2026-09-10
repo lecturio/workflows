@@ -143,7 +143,8 @@ Quick start: one ticket, end to end
    ```
 
 6. **Clean up.** Deletes the ticket branch and its tracking branches, local and
-   remote, immediately and without asking.
+   remote. The deployed branches are never deleted, and a branch carrying commits
+   production has not got is listed and waits for a `y`.
 
    ```bash
    gitflow ABC-123 closed

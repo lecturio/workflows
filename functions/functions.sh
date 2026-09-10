@@ -62,8 +62,17 @@ function print_msg() {
 	fi
 }
 
+#
+# Prefixes every line, not just the first: the git output that reaches here
+# through emit_failonerror is several lines of reason and advice, and the tail
+# of it used to come out bare, reading as if the tool had stopped talking
+# mid-message.
+#
 function print_err() {
-	echo "[ERROR] $1"
+	local line
+	while IFS= read -r line; do
+		echo "[ERROR] $line"
+	done <<< "$1"
 }
 
 #

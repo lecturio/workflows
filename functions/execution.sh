@@ -46,12 +46,56 @@ function emit_failonerror() {
 	fi
 }
 
+#
+# Run git with its arguments kept apart, and end the run if it fails.
+#
+# Nothing is eval'd here, which is the point: emit re-parses the command string
+# it is given, and a branch name is data the repository hands us, not something
+# we wrote. Git allows ; $( ) ` & | in a ref name - only spaces, globs and a
+# few others are forbidden - so a branch pushed as "ABC-123;id" ran id on the
+# machine of whoever closed the ticket.
+#
+# $@ - the git subcommand and its arguments, one to a word
+#
+function gitrun_failonerror() {
+	git "$@"
+	if [ $? -gt 0 ]; then
+		WF_STATUS=1
+		print_build_msg
+		exit 1
+	fi
+}
+
 function emitgit_abort_rebase() {
 	emit "git rebase --abort"
 }
 
 function emitgit_sync_branch() {
 	emit "git pull --rebase origin $1" "$2"
+}
+
+#
+# Check a branch out, or end the run reporting why.
+#
+# Every stage acts on the branch it has just checked out - deletes it, rebases
+# it, commits onto it - so a checkout whose failure is discarded leaves the
+# commands after it running against whatever HEAD happens to be. That is how
+# `closed` deleted the ticket from origin while keeping it locally, and how
+# `deployable` rebased the ticket onto itself twice and reported BUILD SUCCESS
+# with production untouched.
+#
+# git's own reason is printed, because the causes need different answers: a
+# worktree holding changes the switch would overwrite, a branch another
+# worktree has checked out, a name two remotes carry. Silent while it works.
+#
+# What git said is left in output.log either way, so a stage for which the
+# switch is the point rather than plumbing can report it - see in-progress.
+#
+# $1 - the branch, or the arguments of a checkout that creates one
+#      ("-b ABC-123 origin/master")
+#
+function emitgit_checkout() {
+	emit_failonerror "git checkout $1" print_msg
 }
 
 #

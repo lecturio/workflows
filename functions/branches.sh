@@ -8,10 +8,10 @@
 function setup_branch() {
 	local BRANCH_EXIST=`emitgit_is_local_branch $1`
 	if [ $BRANCH_EXIST -gt 0 ]; then
-		emit_failonerror "git checkout -b $1 origin/$1"
+		emitgit_checkout "-b $1 origin/$1"
 	fi
 
-	emit_failonerror "git checkout $1"
+	emitgit_checkout "$1"
 	emitgit_sync_branch $1
 
 	if [ $? -gt 0 ]; then
@@ -118,12 +118,12 @@ function track_feature_branch() {
 	local CURRENT_BRANCH=`emit "git rev-parse --abbrev-ref HEAD"`
 
 	if [ "$CURRENT_BRANCH" != "$WF_TASK" ]; then
-		emit_failonerror "git checkout $WF_TASK" print_msg
+		emitgit_checkout "$WF_TASK"
 	fi
 
 	local TRACK_BRANCH="$(track_branch_ns)$(next_track_num)"
 
 	emit_failonerror "git branch --track ${TRACK_BRANCH}" print_msg
-	emit_failonerror "git checkout ${TRACK_BRANCH}" quiet
+	emitgit_checkout "${TRACK_BRANCH}"
 	emit_failonerror "git push origin ${TRACK_BRANCH}" print_msg
 }

@@ -6,13 +6,27 @@ emit "git show-ref --verify refs/heads/$WF_TASK" quiet
 EXISTS_LOCALLY=$?
 EXISTS_REMOTELY=`emit "git branch -r --list origin/${WF_TASK}"`
 
+#
+# Where the switch left you, which is this stage's whole point - the shared
+# checkout is quiet while it works, because everywhere else it is plumbing.
+# Only git's first line: what follows it is the branch's standing against
+# origin, which the pull at the end of the stage reports for itself. Read from
+# output.log before anything else writes over it.
+#
+__report_checkout() {
+	print_msg "`head -1 $WF_DIR/output.log`"
+}
+
 if [ $EXISTS_LOCALLY -eq 0 ]; then
-	emit "git checkout $WF_TASK" print_msg
+	emitgit_checkout "$WF_TASK"
+	__report_checkout
 else
 	if [ $EXISTS_REMOTELY ]; then
-		emit "git checkout -b $WF_TASK origin/$WF_TASK" print_msg
+		emitgit_checkout "-b $WF_TASK origin/$WF_TASK"
+		__report_checkout
 	else
-		emit "git checkout -b $WF_TASK origin/$WF_PROD_BRANCH" print_msg
+		emitgit_checkout "-b $WF_TASK origin/$WF_PROD_BRANCH"
+		__report_checkout
 		emit "git push origin $WF_TASK" print_msg
 		emit "git branch -u origin/$WF_TASK" print_msg
 	fi
