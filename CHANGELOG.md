@@ -22,6 +22,18 @@ Current version: 0.0.4.SNAPSHOT
   works, since a switch is plumbing in every stage but one: `in-progress`
   prints the line git wrote for it - `Switched to branch 'ABC-123'`,
   `Already on 'ABC-123'` - because where you end up is that stage's result
+* the exit status carries the result: a run that prints `BUILD SUCCESS` exits 0
+  and one that prints `BUILD FAILURE` exits 1, where every run used to exit 0
+  whatever it had printed, so
+  `gitflow ABC-123 to-staging && git push origin staging` pushed after a stage
+  that had refused to commit. `WF_STATUS` is only ever raised now, and no later
+  command lowers it again: in `in-progress` a push or a `git branch -u` that
+  failed was erased by the pull that followed it, and the run ended
+  `BUILD SUCCESS` with the branch left without an upstream. The ways out that
+  reported nothing at all report too - the preflight checks, a missing or
+  unknown stage on the command line, `pr` against an origin that is not on
+  github.com, and the `emit` modes that write straight to the terminal, whose
+  reachable case is a conflicting rebase in `deployable`
 * `[ERROR]` prefixes every line of a multi-line message. Git's reason for
   refusing reaches the terminal through `print_err`, and only its first line was
   marked, so the advice underneath read as if the tool had stopped talking
@@ -78,9 +90,8 @@ Current version: 0.0.4.SNAPSHOT
   which every later sync then skipped. `to-staging` asserts the same thing
 * new `skills/gitflow`, a Claude Code skill to copy into a project's
   `.claude/skills`, so an agent driving the tool knows the order of the stages,
-  which pushes are not its to make, that a run reporting `BUILD FAILURE` can
-  still exit 0, and how to finish a conflicted sync. Nothing in the tool itself
-  changed
+  which pushes are not its to make, and how to finish a conflicted sync. Nothing
+  in the tool itself changed
 * the documented flow is `in-progress`, `pr`, `to-staging`, `deployable`,
   `closed`, with the pull request opened early so review runs while the ticket is
   tested on staging. `resolved` and `resolved sync` are documented as deprecated -

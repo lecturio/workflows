@@ -41,7 +41,9 @@ if [ "$WF_TASK" == "self" ]; then
 fi
 
 if [ -z "$WF_GIT_ROOT" ]; then
+	WF_STATUS=1
 	print_err "gitflow must be run inside a project clone"
+	print_build_msg
 	exit 1
 fi
 
@@ -51,8 +53,10 @@ validate_input_params
 
 out=$(check_github)
 if [ $? -gt 1 ]; then
+	WF_STATUS=1
 	echo $out
 	echo "Add your private key ssh-add [path to pk]."
+	print_build_msg
 	exit 1
 fi
 
@@ -60,7 +64,9 @@ cd "$WF_GIT_ROOT"
 
 WF_REPO=$(git config --get remote.origin.url)
 if [ -z "$WF_REPO" ]; then
+	WF_STATUS=1
 	print_err "Could not read origin URL from the current repository"
+	print_build_msg
 	exit 1
 fi
 export WF_REPO
@@ -106,3 +112,7 @@ if [[ "$WF_COMMAND" == "resolved" && "$WF_ENV" == "sync" ]]; then
 	source $WF_DIR/commands/${WF_COMMAND}-${WF_ENV}.sh
 fi
 print_build_msg
+
+# The banner is the report; this is the same answer for a script, an && chain or
+# a CI step, which used to read every run as a success whatever it printed.
+exit $WF_STATUS
