@@ -28,23 +28,31 @@ emitgit_checkout "$WF_PROD_BRANCH"
 # named master and staging turned them into branches to delete. The remote list
 # is origin's alone, without its symbolic origin/HEAD, and the deployed
 # branches are dropped from both lists whatever the ticket matches.
+#
+# The name is cut to the branch by component count and not by "refname:short",
+# which shortens only as far as stays unambiguous: a local branch named
+# origin/ABC-123 makes short print heads/origin/ABC-123 for it and
+# remotes/origin/ABC-123 for the remote-tracking branch, and neither of those
+# is a branch git will delete. Trimming the prefix as text has the same flaw in
+# reverse - it turns a local origin/ABC-123 into the ABC-123 next to it.
+#
 # $1 - "remote" for origin's branches, the local ones without it
 # Fills WF_DELETE with the matched names, remote ones without the "origin/".
 #
 __collect_ticket_branches() {
-	local REFS="refs/heads" NAME
+	local REFS="refs/heads" STRIP=2 NAME
 	if [ "$1" == "remote" ]; then
 		REFS="refs/remotes/origin"
+		STRIP=3
 	fi
 
 	WF_DELETE=()
 	while read -r NAME; do
-		NAME="${NAME#origin/}"
 		if [ "$NAME" == "$WF_PROD_BRANCH" ] || [ "$NAME" == "$WF_STAGING_BRANCH" ]; then
 			continue
 		fi
 		WF_DELETE+=("$NAME")
-	done < <(git for-each-ref --format='%(refname:short) %(symref)' "$REFS" |
+	done < <(git for-each-ref --format="%(refname:lstrip=$STRIP) %(symref)" "$REFS" |
 		awk '$2 == "" { print $1 }' | grep -Fw -- "$WF_TASK")
 }
 
@@ -55,16 +63,30 @@ __collect_ticket_branches() {
 # commits and every one of them would otherwise read as unmerged. Production is
 # origin's copy, because an unpushed local production is exactly the case worth
 # asking about.
+#
+# Everything it cannot vouch for counts as unmerged, since the answer decides
+# whether work is deleted unasked. "git cherry" walks past merge commits, and a
+# merge can carry a resolution that is in neither of its parents, so those are
+# counted on their own; and a comparison that fails at all is worth one, rather
+# than the zero a discarded error used to read as.
+#
 # $1 - branch name
 # $2 - "remote" to weigh origin's copy of it
 #
 __unmerged_commits() {
-	local REF="$1"
+	local REF="$1" PICKED MERGES
 	if [ "$2" == "remote" ]; then
 		REF="origin/$1"
 	fi
 
-	git cherry "origin/$WF_PROD_BRANCH" "$REF" 2>/dev/null | grep -c '^+'
+	PICKED=`git cherry "origin/$WF_PROD_BRANCH" "$REF" 2>&1`
+	if [ $? -gt 0 ]; then
+		echo 1
+		return
+	fi
+
+	MERGES=`git rev-list --count --merges "origin/$WF_PROD_BRANCH..$REF" 2>/dev/null`
+	echo $(( `printf '%s\n' "$PICKED" | grep -c '^+'` + ${MERGES:-1} ))
 }
 
 __collect_ticket_branches remote
@@ -105,9 +127,13 @@ if [ -n "$UNMERGED" ]; then
 	fi
 fi
 
+# Origin first, and a refusal there - a protected-ref rule, a lost race - ends
+# the run with the local branches still in place, which is the state you can
+# re-run from. The other order leaves the work only on a remote that just said
+# no.
 if [ ${#REMOTE_BRANCHES[@]} -gt 0 ]; then
-	emit "git push origin --delete ${REMOTE_BRANCHES[*]}"
+	gitrun_failonerror push origin --delete "${REMOTE_BRANCHES[@]}"
 fi
 if [ ${#LOCAL_BRANCHES[@]} -gt 0 ]; then
-	emit "git branch -D ${LOCAL_BRANCHES[*]}"
+	gitrun_failonerror branch -D "${LOCAL_BRANCHES[@]}"
 fi

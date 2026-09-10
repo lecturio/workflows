@@ -296,10 +296,12 @@ a branch holding commits `origin/master` has not got, which is what an unpushed
 [INFO] Delete anyway? [y/N] y
 ```
 
-Only `y` goes ahead; anything else deletes nothing and reports `BUILD FAILURE`.
-Commits are weighed by patch, so the rebase in `deployable` and the cherry-picks
-in `to-staging` do not make a branch look unmerged for having different SHAs than
-production. When there is no terminal to ask on — a script, a pipe, an agent — the
+Only `y` or `Y` goes ahead; anything else deletes nothing and reports
+`BUILD FAILURE`. Commits are weighed by patch, so the rebase in `deployable` and
+the cherry-picks in `to-staging` do not make a branch look unmerged for having
+different SHAs than production. Merge commits are counted whole, since the patch
+comparison walks past them and a merge can carry a resolution that is in neither
+of its parents, and a comparison that cannot be made at all counts as unmerged. When there is no terminal to ask on — a script, a pipe, an agent — the
 run stops with the same list and deletes nothing, and you run it again by hand.
 
 `resolved`, `resolved sync`

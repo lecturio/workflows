@@ -46,6 +46,26 @@ function emit_failonerror() {
 	fi
 }
 
+#
+# Run git with its arguments kept apart, and end the run if it fails.
+#
+# Nothing is eval'd here, which is the point: emit re-parses the command string
+# it is given, and a branch name is data the repository hands us, not something
+# we wrote. Git allows ; $( ) ` & | in a ref name - only spaces, globs and a
+# few others are forbidden - so a branch pushed as "ABC-123;id" ran id on the
+# machine of whoever closed the ticket.
+#
+# $@ - the git subcommand and its arguments, one to a word
+#
+function gitrun_failonerror() {
+	git "$@"
+	if [ $? -gt 0 ]; then
+		WF_STATUS=1
+		print_build_msg
+		exit 1
+	fi
+}
+
 function emitgit_abort_rebase() {
 	emit "git rebase --abort"
 }

@@ -26,6 +26,25 @@ Current version: 0.0.4.SNAPSHOT
   refusing reaches the terminal through `print_err`, and only its first line was
   marked, so the advice underneath read as if the tool had stopped talking
   mid-message
+* `closed` deletes through git's argument list instead of a command string that
+  `emit` re-parses. Git allows `;`, `$( )` and backticks in a ref name, so a
+  branch pushed to origin as `ABC-123;id` ran `id` on the machine of whoever
+  closed the ticket. The two deletions also report: a remote that refuses the
+  push - a protected-ref rule, a lost race - ends the run with `BUILD FAILURE`
+  and the local branches still in place, where before the local deletion went
+  ahead regardless and the run claimed success
+* `closed` reads branch names by component count, `%(refname:lstrip=2)` and
+  `lstrip=3`, rather than `%(refname:short)`, which shortens only as far as
+  stays unambiguous: with a local branch named `origin/ABC-123` in the
+  repository, short reports `heads/origin/ABC-123` and `remotes/origin/ABC-123`,
+  neither of which git will delete, so nothing was deleted on either side and
+  the run still reported `BUILD SUCCESS`
+* the confirmation in `closed` counts what it cannot vouch for. `git cherry`
+  walks past merge commits, and a merge can carry a resolution that is in
+  neither parent, so a branch whose only unshared work sat in one was deleted
+  without asking; merges in the range are now counted on their own. A patch
+  comparison that fails at all counts as unmerged, where the error used to be
+  discarded and read as nothing to lose
 * `closed` no longer deletes branches it was not asked to delete. It read the
   branch list through `git branch`, whose `* ` marker for the checked-out branch
   glob-expanded against the repository root, so a root holding files named

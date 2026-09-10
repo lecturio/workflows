@@ -163,8 +163,9 @@ and there is no terminal on a run of yours:
 [INFO] BUILD FAILURE
 ```
 
-Nothing was deleted. Show the user that list — those commits exist nowhere else —
-and let them run the command themselves. Do not work around the prompt with
+Nothing was deleted. Show the user that list — production has not got those
+commits, which is all the check establishes; they may well be on staging or on
+another branch — and let them run the command themselves. Do not work around the prompt with
 `git push origin --delete` or `git branch -D`.
 
 Where does the ticket stand
@@ -196,7 +197,7 @@ When a run fails
 | `[ERROR] Local changes need to be pushed to ABC-123` | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | commit the modified tracked files on the ticket branch, then re-run |
 | `[ERROR] Configured branch origin/staging does not exist` | stop and ask. The deployed branches must already exist on `origin`; the tool never creates them |
-| `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on and stopped before touching anything. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
+| `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on, and nothing after that checkout ran - earlier steps of the stage may already have done their work. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
 | `Available commands are: …` | the stage name was wrong — it is `deployable`, not `deployed` |
 | anything naming a cherry-pick, a rebase, a merge, a revert or a conflict | [conflicts.md](conflicts.md) |
 
