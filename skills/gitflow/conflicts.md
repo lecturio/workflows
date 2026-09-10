@@ -24,6 +24,10 @@ A `to-staging` cherry-pick that conflicted
 [INFO] Stopped on 2654521 ABC-123 conflicting edit
 ```
 
+The deprecated `resolved` prints the same lines for the same state, and ends
+`BUILD FAILURE` too — it is meant to stop here, but nothing has reached staging
+until the round is finished. Everything below applies to both.
+
 Nothing was committed and no bookmark was made, so the ticket is still recorded
 as unsynced. You are in a cherry-pick on the staging branch. Fix the conflicted
 files and `git add` (or `git rm`) them, then finish in whichever of the two shapes
