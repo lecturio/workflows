@@ -38,6 +38,54 @@ Current version: 0.0.4.SNAPSHOT
   refusing reaches the terminal through `print_err`, and only its first line was
   marked, so the advice underneath read as if the tool had stopped talking
   mid-message
+* the completion loader is appended to `~/.profile` (`~/.bashrc` on Linux) and
+  that file is never sourced. Sourcing it gave the shell you typed in no
+  completion at all - a run cannot change the environment of the shell that
+  started it - and it ran the whole of an interactive startup file inside the
+  run, so a profile ending in `cd "$HOME"`, which is a common one, moved the run
+  out of the project clone: the first `gitflow` in a repository reported
+  `gitflow must be run inside a project clone`, and only the first, which read
+  as random. The run says the loader was added and leaves reloading to you
+* a tool clone whose directory name contains a space works. `$WF_DIR` was
+  expanded bare, so `functions/` was never sourced and the run ended on
+  `check_github: command not found` diagnosed as a missing ssh key - 127 passed
+  a test that excluded only 1 - and the loader written into the startup file was
+  broken from then on, erroring on every login shell. The paths are quoted, in
+  the block written into the startup file as well, and the ssh check now tests
+  for ssh's own failure status
+* the command log is a file of the run's own under `$TMPDIR` instead of
+  `output.log` in the tool's own directory. That directory is not the tool's to
+  write in - a clone kept somewhere root-owned, which "clone somewhere
+  permanent" invites - and a redirection that fails means bash runs no command
+  at all, so every reporting stage came out as a bare `[ERROR]` and
+  `BUILD FAILURE` with nothing said about either. The log is opened before the
+  stage and the run stops if it cannot be, a command that fails without a word
+  is reported as itself rather than as nothing, and two runs side by side no
+  longer overwrite each other's messages - one used to report the other's
+  `Switched to branch`. A leftover `output.log` in the clone is still ignored by
+  git and can be deleted
+* the unpushed-commits guard verifies both sides of the range it measures.
+  `git log origin/ABC-123..ABC-123` fails when either ref is missing, and the
+  failure went nowhere: the empty output read as nothing pending, so
+  `gitflow TYPO-999 to-staging` went straight past the guard, pulled production
+  and leaked git's own `fatal: ambiguous argument`. A ticket that is not there,
+  or one that was never pushed, is refused by name
+* a `git fetch` that fails ends the stage with git's reason under `[ERROR]`,
+  where it used to be discarded. An offline run went on from whatever was last
+  fetched: `closed` weighed a ticket against a stale `origin/master` and listed
+  commits that had been on it for days as work that would be lost, with nothing
+  to say the refs were old
+* the ssh key check runs where it can mean something: every stage but `pr`,
+  which only prints a compare URL and opens no connection, and only when
+  `origin` is an ssh URL on github.com - the stages talk to whatever origin is,
+  so on a project hosted anywhere else the answer said nothing about the run
+  that followed. It is non-interactive now (`BatchMode`), so a host key nobody
+  has seen before is refused instead of asked about at the start of a run, and
+  ssh's reason is printed through `[ERROR]` a line at a time, where an unquoted
+  `echo` collapsed a multi-line failure onto one
+* the installer removes the old symlink with `rm -f` rather than `rm -rf`, which
+  would have taken a directory somebody had left at `/usr/local/bin/gitflow`
+  with it, and quotes the path it links to
 * `closed` deletes through git's argument list instead of a command string that
   `emit` re-parses. Git allows `;`, `$( )` and backticks in a ref name, so a
   branch pushed to origin as `ABC-123;id` ran `id` on the machine of whoever

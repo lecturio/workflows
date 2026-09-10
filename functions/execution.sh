@@ -15,11 +15,11 @@ function emit() {
 	if [ "$2" == "quiet" ]; then
 		eval $1 >/dev/null 2>&1
 	elif [ "$2" == "print_msg" ]; then
-		$(eval $1 >$WF_DIR/output.log 2>&1)
+		eval $1 >"$WF_LOG" 2>&1
 		if [ $? -gt 0 ]; then
 			WF_STATUS=1
 		fi
-		print_msg "`tail $WF_DIR/output.log`"
+		print_msg "`tail "$WF_LOG"`"
 	else
 		eval $1
 	fi
@@ -34,15 +34,22 @@ function emit() {
 # would otherwise read here as this command having failed.
 #
 function emit_failonerror() {
-	local STATUS
+	local STATUS REASON
 	if [ "$2" == "quiet" ]; then
 		eval $1 >/dev/null 2>&1
 		STATUS=$?
 	elif [ "$2" == "print_msg" ]; then
-		$(eval $1 >$WF_DIR/output.log 2>&1)
+		eval $1 >"$WF_LOG" 2>&1
 		STATUS=$?
 		if [ $STATUS -gt 0 ]; then
-			print_err "`tail $WF_DIR/output.log`"
+			# what the command said, and the command itself when it said
+			# nothing: the log holding no reason used to be reported as a
+			# bare [ERROR] with nothing after it
+			REASON="`tail "$WF_LOG"`"
+			if [ -z "$REASON" ]; then
+				REASON="$1 failed with status $STATUS"
+			fi
+			print_err "$REASON"
 		fi
 	else
 		eval $1
@@ -98,7 +105,7 @@ function emitgit_sync_branch() {
 # worktree holding changes the switch would overwrite, a branch another
 # worktree has checked out, a name two remotes carry. Silent while it works.
 #
-# What git said is left in output.log either way, so a stage for which the
+# What git said is left in the run's log either way, so a stage for which the
 # switch is the point rather than plumbing can report it - see in-progress.
 #
 # $1 - the branch, or the arguments of a checkout that creates one
@@ -118,11 +125,37 @@ function emitgit_is_local_branch() {
 }
 
 #
-# Checks if there pending commits in certain branches
+# Refuse when the branch holds commits origin has not got.
+#
+# Both sides of the range are verified first, and named in full. git log of a
+# range with a side missing fails, and the failure went nowhere: the output was
+# empty, which read here as nothing pending, so `gitflow TYPO-999 to-staging`
+# went past this guard and leaked git's own `fatal: ambiguous argument` from the
+# stage behind it. Full names because a short one is resolved by precedence - a
+# tag before a local branch - which is not the branch this weighs.
+#
 # $1 - branch to be checked
 #
 emit_failonerror_pending_commits() {
-	PENDING_COMMITS=`emit "git log origin/${1}..${1}"`
+	local LOCAL_REF="refs/heads/${1}" REMOTE_REF="refs/remotes/origin/${1}"
+
+	emit "git rev-parse --verify --quiet $LOCAL_REF" quiet
+	if [ $? -ne 0 ]; then
+		WF_STATUS=1
+		print_err "Branch ${1} does not exist locally"
+		print_build_msg
+		exit 1
+	fi
+
+	emit "git rev-parse --verify --quiet $REMOTE_REF" quiet
+	if [ $? -ne 0 ]; then
+		WF_STATUS=1
+		print_err "Branch origin/${1} does not exist - push it first"
+		print_build_msg
+		exit 1
+	fi
+
+	PENDING_COMMITS=`emit "git log $REMOTE_REF..$LOCAL_REF"`
 	if [ "$PENDING_COMMITS" != "" ]; then
 		WF_STATUS=1
 		print_err "Local changes need to be pushed to ${1}"

@@ -7,13 +7,16 @@ Error messages
 | Message | Cause | Fix |
 | --- | --- | --- |
 | `[ERROR] Update workflows to the latest version` | the tool's own clone differs from its remote: behind it, or carrying unpushed local commits of your own | `gitflow self update`, then push or move aside any local commits it reports |
-| `Add your private key ssh-add [path to pk].` | `ssh -T git@github.com` failed | load your key, e.g. `ssh-add ~/.ssh/id_ed25519`, and check you can reach github.com |
+| `Add your private key ssh-add [path to pk].`, under `[ERROR]` lines quoting ssh | the key check before the stage failed. It runs for every stage but `pr`, and only when `origin` is an ssh URL on github.com; it never prompts, so a host key you have not seen before fails it too | load your key, e.g. `ssh-add ~/.ssh/id_ed25519`, and check you can reach github.com |
 | `[ERROR] gitflow must be run inside a project clone` | the current directory is not inside a git repository | `cd` into the project you want to act on |
 | `[ERROR] Could not read origin URL from the current repository` | the project has no `origin` remote | `git remote add origin …` |
+| `[ERROR] fatal: Could not read from remote repository.`, or another `git fetch` error | the stage's own `git fetch` failed - offline, or origin unreachable - and it stops rather than work from refs it could not update | get back on the network, or fix the remote, then re-run |
+| `[ERROR] Could not open a command log in /tmp` | `$TMPDIR`, or `/tmp` when that is unset, is not writable, and the commands that report through `[INFO]` have nowhere to write | make it writable, or point `TMPDIR` at somewhere that is |
 | `Provide parameters: gitflow JIRA-001 in-progress` | ticket or stage missing | pass both: `gitflow ABC-123 in-progress` |
 | `Available commands are: in-progress to-staging resolved deployable closed pr` | the stage name is not one of those six | note it is `deployable`, not `deployed` |
 | `[ERROR] Invalid branch name for WF_TASK: …` | the ticket ID has characters the tool refuses | names must match `^[A-Za-z0-9][-A-Za-z0-9._/]*$` |
 | `[ERROR] Configured branch origin/devel does not exist` | `.gitflow` (or the environment) names a branch that isn't on `origin` | fix the name or push the branch |
+| `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | `to-staging` and `resolved` weigh the ticket branch against origin's copy, and one of the two is not there - usually a typo'd ticket, or a branch that never left this machine | check the name with `git branch -a`; run `in-progress` for a ticket that has not started, or `git push` one that only exists locally |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them or stash them; untracked files never block it |
 | `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
@@ -143,8 +146,10 @@ Shell completion
 ----------------
 
 The first `gitflow` run appends a loader for `gitflow-completion.sh` to
-`~/.profile`, or to `~/.bashrc` on Linux. Reload it with `. ~/.bashrc` or
-`. ~/.profile`, and then:
+`~/.profile`, or to `~/.bashrc` on Linux, and says so. Nothing is loaded into the
+shell you typed in — a run cannot change the environment of the shell that
+started it — so reload that file with `. ~/.bashrc` or `. ~/.profile`, or open a
+new shell, and then:
 
 ```bash
 gitflow ABC-1[tab]      # completes local branches
@@ -165,12 +170,27 @@ Branch-name completion relies on git's own bash completion. Without
 [git-completion](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash)
 you still get stage names, but not branches.
 
+A run only checks whether the startup file mentions the path, so a loader written
+by a version before those paths were quoted — one naming a clone directory with a
+space in its name, which errors on every login shell — is left as it stands.
+Quote it by hand, or delete the block and let the next run write it again.
+
 Where the output went
 ---------------------
 
-The last output of the commands that report through `[INFO]` is kept in
-`output.log` in the tool's directory. It is overwritten on each run and ignored by
-git.
+The last output of the commands that report through `[INFO]` is kept in a log of
+the run's own, `gitflow-output.XXXXXX` under `$TMPDIR` — under `/tmp` when
+`TMPDIR` is unset. Each run writes only its own file, so two runs side by side
+never overwrite each other's messages, and the newest one is the run you just
+watched:
+
+```bash
+ls -t "${TMPDIR:-/tmp}"/gitflow-output.* | head -1
+```
+
+Versions before 0.0.4 kept it as `output.log` in the tool's own directory, which
+failed outright wherever that directory was not writable. A leftover `output.log`
+there is still ignored by git and can be deleted.
 
 There is no dry-run mode. To see what a stage runs without running it, read
 [the command reference](commands.md), which lists the git commands for each.

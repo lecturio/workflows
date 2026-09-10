@@ -11,10 +11,10 @@ EXISTS_REMOTELY=`emit "git branch -r --list origin/${WF_TASK}"`
 # checkout is quiet while it works, because everywhere else it is plumbing.
 # Only git's first line: what follows it is the branch's standing against
 # origin, which the pull at the end of the stage reports for itself. Read from
-# output.log before anything else writes over it.
+# the run's log before anything else writes over it.
 #
 __report_checkout() {
-	print_msg "`head -1 $WF_DIR/output.log`"
+	print_msg "`head -1 "$WF_LOG"`"
 }
 
 if [ $EXISTS_LOCALLY -eq 0 ]; then

@@ -192,14 +192,16 @@ When a run fails
 | Message | Do this |
 | --- | --- |
 | `[ERROR] Update workflows to the latest version` | `gitflow self update`, then re-run the stage. If it reports unpushed local commits in the tool's own clone, tell the user — the check keeps failing until those are pushed or dropped |
-| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
+| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com - checked for every stage but `pr`, and only on an ssh `origin` there. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
 | `[ERROR] gitflow must be run inside a project clone` | `cd` into the project first; the tool reads the repository root and `origin` from the working directory |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `git push` on the ticket branch, then re-run |
+| `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | the ticket branch, or origin's copy of it, is missing - check the name against `git branch -a` before anything else. `in-progress` starts a ticket that has no branch; a branch that never left the machine needs `git push` |
 | `[ERROR] Commit or stash your local changes before to-staging` | commit the modified tracked files on the ticket branch, then re-run |
 | `[ERROR] Configured branch origin/staging does not exist` | stop and ask. The deployed branches must already exist on `origin`; the tool never creates them |
 | `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on, and nothing after that checkout ran - earlier steps of the stage may already have done their work. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
 | `Available commands are: …` | the stage name was wrong — it is `deployable`, not `deployed` |
 | anything naming a cherry-pick, a rebase, a merge, a revert or a conflict | [conflicts.md](conflicts.md) |
 
-The noisier commands write their output to `output.log` in the tool's own
-directory, overwritten on each run.
+The noisier commands write their output to a log of the run's own,
+`gitflow-output.XXXXXX` under `$TMPDIR` (`/tmp` when that is unset). One file per
+run; the newest is the run you just watched.
