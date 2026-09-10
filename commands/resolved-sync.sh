@@ -4,8 +4,16 @@ print_msg "Sync changes to $WF_STAGING_BRANCH"
 
 require_staging_checked_out "resolved sync"
 
+#
+# The message goes to git in a file, the way to-staging writes its own: emit
+# re-parses the command string it is given, and the message is text you typed
+# rather than something we wrote, so -m 'oops $(id)' ran id.
+#
 if [ "$MESSAGE" != "" ]; then
-	emit_failonerror "git commit -am \"$MESSAGE\"" print_msg
+	MSG_FILE=`mktemp "${TMPDIR:-/tmp}/gitflow-msg.XXXXXX"`
+	trap 'rm -f "$MSG_FILE"' EXIT
+	printf '%s\n' "$MESSAGE" > "$MSG_FILE"
+	emit_failonerror "git commit -a -F \"$MSG_FILE\"" print_msg
 fi
 
 refresh_origin
