@@ -142,7 +142,9 @@ yours** — the tool prints the `git push origin staging` reminder but does not 
 Because it commits without a stop for review, it refuses to start while the
 worktree has modified tracked files, rather than folding them into the staging
 commit. Untracked files are fine. It also refuses while any git operation is
-still open, and says which one it found:
+still open, and says which one it found — `resolved` and `deployable` refuse on
+the same list, through the same code, with the advice matched to what each of
+them can offer next:
 
 * unresolved conflicts, from a cherry-pick, a rebase, a merge, a revert or an
   interrupted `git am` (which keeps its state where a rebase does, and is told
@@ -245,7 +247,6 @@ git push origin master
 ```
 
 ```bash
-git rebase --abort                            # clears an unfinished rebase
 git checkout master  && git pull --rebase origin master
 git checkout ABC-123 && git pull --rebase origin ABC-123   # skipped when the branch has unpushed commits
 git checkout ABC-123 && git rebase -Xignore-all-space master
@@ -258,8 +259,23 @@ Leaves you on production, ahead of `origin/master` by the ticket's commits.
 Conflicts almost always land in the first rebase (ticket onto production); the
 second one is usually a fast-forward. `git status` tells you which of the two you
 are in. Fix the files, `git add` / `git rm`, `git rebase --continue`, then run
-`gitflow ABC-123 deployable` again. Re-running is also how you start over, since
-it aborts first.
+`gitflow ABC-123 deployable` again.
+
+Re-running is not a way to start over. Neither of its rebases can carry a paused
+operation forward, so it refuses while one is open — a rebase, a merge, a revert,
+a `git am` or a cherry-pick, whoever started it — names it and the branch it is
+on, prints git's `--continue` and `--abort` for it, and ends `BUILD FAILURE`
+having changed nothing:
+
+```
+[ERROR] A rebase with unresolved conflicts is in progress on a detached HEAD
+[INFO] Finish it, or abandon it with git rebase --abort, then run deployable again
+```
+
+Before 0.0.4 it began with `git rebase --abort`, quiet and unconditional, so a
+rebase anybody was half way through was rewound before the stage had looked at
+anything — its own, or one you had started for a reason of your own — and the
+run went on to report `BUILD SUCCESS`.
 
 `closed`
 --------

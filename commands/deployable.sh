@@ -1,6 +1,16 @@
 #!/bin/bash
 
-emit "git rebase --abort" quiet
+#
+# This used to be "git rebase --abort", quiet and unconditional, run before
+# anything had been looked at: a rebase you were half way through - this
+# stage's own, or one you started yourself for a reason of your own - was
+# rewound with nothing printed to say so, and whatever had been resolved in it
+# went with it. The stage refuses instead. It rebases the ticket onto production
+# and then production onto the ticket, and neither of those can carry a paused
+# operation forward, so every one of them is handed back to git.
+#
+require_nothing_in_flight deployable
+refuse_finished_pick_state deployable
 
 #
 # sync branch

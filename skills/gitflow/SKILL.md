@@ -115,8 +115,8 @@ stop for review and refuses rather than sweep anything in:
 * **no modified tracked files** — commit them on the ticket branch. Untracked
   files never block it. Do not stash on the user's behalf without saying so;
 * **no half-finished git operation** — a cherry-pick, rebase, merge, revert or
-  `git am` in flight makes it refuse and name what it found. See
-  [conflicts.md](conflicts.md).
+  `git am` in flight makes it refuse and name what it found. `resolved` and
+  `deployable` refuse on the same list. See [conflicts.md](conflicts.md).
 
 Leave `-m` out and let it name the commits it picked (`ABC-123 a1b2c3d 4e5f6a7`)
 unless the user wants a subject of their own. `-m` takes every word after it, so
@@ -139,6 +139,10 @@ you on production, ahead of `origin/master`. Show the user
 
 Run it once, at the end, after the ticket has been accepted on staging. Conflicts
 almost always land in the first rebase — see [conflicts.md](conflicts.md).
+
+It refuses while any git operation is open, its own conflicted rebase included,
+so re-running it is not a way to start over and nothing you left half-resolved
+is thrown away.
 
 `closed`
 --------
@@ -200,6 +204,7 @@ When a run fails
 | `[ERROR] Configured branch origin/staging does not exist` | stop and ask. The deployed branches must already exist on `origin`; the tool never creates them |
 | `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on, and nothing after that checkout ran - earlier steps of the stage may already have done their work. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
 | `Available commands are: …` | the stage name was wrong — it is `deployable`, not `deployed` |
+| `[ERROR] A cherry-pick / rebase / merge / revert / am … is in progress on …` | the stage found a git operation open and changed nothing. Report what it named and follow its printed lines; do not abort anything to clear the way (rule 5) |
 | anything naming a cherry-pick, a rebase, a merge, a revert or a conflict | [conflicts.md](conflicts.md) |
 
 The noisier commands write their output to a log of the run's own,

@@ -30,8 +30,7 @@ message tells you — it accounts for commits still queued behind the conflict. 
 full procedure is in [conflicts](troubleshooting.md#conflicts).
 
 `resolved` itself, the cherry-pick half, has no such role. Reach for it only if
-you want to see a sync staged before it is committed, and know that re-running it
-aborts an in-flight cherry-pick and throws away uncommitted work on staging.
+you want to see a sync staged before it is committed.
 
 Reference
 ---------
@@ -57,7 +56,6 @@ Requires the ticket branch to be fully pushed, and both `origin/master` and
 `origin/staging` to exist.
 
 ```bash
-git cherry-pick --abort                       # clears an unfinished cherry-pick
 git checkout master  && git pull --rebase origin master
 git checkout ABC-123 && git pull --rebase origin ABC-123
 git checkout staging && git pull --rebase origin staging
@@ -90,9 +88,36 @@ and uncommitted. `resolved sync` without a message only bookmarks, which would
 leave that work sitting uncommitted on staging behind a bookmark that claims it is
 already there.
 
-To start over, re-run `gitflow ABC-123 resolved` — it aborts the in-flight
-cherry-pick first, which also means **re-running throws away uncommitted
-cherry-pick work on staging**.
+Re-running `gitflow ABC-123 resolved` is not a way to start over. It refuses
+while any cherry-pick, rebase, merge, revert or `git am` is open, names the one
+it found and the branch it is on, and changes nothing:
+
+```
+[ERROR] A cherry-pick with unresolved conflicts is in progress on staging
+[INFO] Fix the conflicted files and "git add" them, then:
+[INFO]   gitflow ABC-123 resolved sync -m "message"   # commits and bookmarks
+[INFO] Or drop it: git cherry-pick --abort
+```
+
+A pick that is applying commits of some other ticket, or a rebase or merge of
+your own, gets the same refusal with git's own `--continue` and `--abort` named
+instead — nothing the stage offers can finish those. Starting over means asking
+for it yourself with `git cherry-pick --abort`, and then re-running. Before
+0.0.4 the stage ran that abort for you, quietly and before anything had been
+looked at, so a conflict resolved by hand and `git add`-ed went back to what
+staging held before the pick with nothing printed to say so, and the run still
+ended `BUILD SUCCESS`.
+
+Once the last commit of a conflicted round has been committed by hand there is
+nothing left to apply, but git still counts the pick as in progress. The stage
+says so rather than picking again over it:
+
+```
+[ERROR] A cherry-pick on staging has nothing left to apply and was never cleared
+[INFO] git counts it as still in progress, and refuses the next cherry-pick while it is there
+[INFO] It finished a round of ABC-123: bookmark that with gitflow ABC-123 resolved sync
+[INFO] Clear what git left with: git cherry-pick --quit   # keeps your index
+```
 
 `resolved sync`
 ---------------

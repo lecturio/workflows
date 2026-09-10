@@ -16,7 +16,19 @@ function sync_feature_changes() {
 emit_failonerror_pending_commits "$WF_TASK"
 
 if [ "$WF_ENV" == "" ]; then
-	emit "git cherry-pick --abort" quiet
+	#
+	# This used to be "git cherry-pick --abort", quiet and unconditional, run
+	# before anything had been looked at: a conflict resolved by hand and
+	# "git add"-ed was reverted to what staging held before the pick, with
+	# nothing printed to say so, and a cherry-pick of your own on any branch
+	# went the same way. The stage refuses instead. A cherry-pick of this
+	# ticket's own range is the one thing it can name a next step for -
+	# finishing a hand-resolved sync is what "resolved sync" is for - and
+	# everything else goes back to git and to whoever started it.
+	#
+	require_nothing_in_flight resolved own-pick
+	refuse_finished_pick_state resolved
+
 	refresh_origin
 
 	require_origin_branch "$WF_PROD_BRANCH"
