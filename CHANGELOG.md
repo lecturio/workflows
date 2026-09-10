@@ -39,6 +39,14 @@ Current version: 0.0.4.SNAPSHOT
   repository, short reports `heads/origin/ABC-123` and `remotes/origin/ABC-123`,
   neither of which git will delete, so nothing was deleted on either side and
   the run still reported `BUILD SUCCESS`
+* `closed` names refs in full where it weighs a branch, and deletes on origin
+  through `refs/heads/`. A short name is resolved by precedence - a tag before a
+  local branch, a local branch before a remote-tracking one - so a tag called
+  `ABC-123`, or a local branch called `origin/ABC-123`, answered for the branch
+  being weighed and the ticket was deleted without the confirmation its commits
+  had earned; and origin carrying a tag named like the branch made the whole
+  delete "dst refspec matches more than one". `git branch -D` keeps bare names,
+  which are the only ones it accepts
 * the confirmation in `closed` counts what it cannot vouch for. `git cherry`
   walks past merge commits, and a merge can carry a resolution that is in
   neither parent, so a branch whose only unshared work sat in one was deleted

@@ -70,22 +70,27 @@ __collect_ticket_branches() {
 # counted on their own; and a comparison that fails at all is worth one, rather
 # than the zero a discarded error used to read as.
 #
+# Refs are named in full. A short name is resolved by precedence - a tag before
+# a local branch, a local branch before a remote-tracking one - so a tag called
+# ABC-123, or a local branch called origin/ABC-123, answered for the branch
+# being weighed and the answer decided whether it was deleted unasked.
+#
 # $1 - branch name
 # $2 - "remote" to weigh origin's copy of it
 #
 __unmerged_commits() {
-	local REF="$1" PICKED MERGES
+	local REF="refs/heads/$1" PROD="refs/remotes/origin/$WF_PROD_BRANCH" PICKED MERGES
 	if [ "$2" == "remote" ]; then
-		REF="origin/$1"
+		REF="refs/remotes/origin/$1"
 	fi
 
-	PICKED=`git cherry "origin/$WF_PROD_BRANCH" "$REF" 2>&1`
+	PICKED=`git cherry "$PROD" "$REF" 2>&1`
 	if [ $? -gt 0 ]; then
 		echo 1
 		return
 	fi
 
-	MERGES=`git rev-list --count --merges "origin/$WF_PROD_BRANCH..$REF" 2>/dev/null`
+	MERGES=`git rev-list --count --merges "$PROD..$REF" 2>/dev/null`
 	echo $(( `printf '%s\n' "$PICKED" | grep -c '^+'` + ${MERGES:-1} ))
 }
 
@@ -132,7 +137,15 @@ fi
 # re-run from. The other order leaves the work only on a remote that just said
 # no.
 if [ ${#REMOTE_BRANCHES[@]} -gt 0 ]; then
-	gitrun_failonerror push origin --delete "${REMOTE_BRANCHES[@]}"
+	# refs/heads/ on the remote side: a plain name there matches whatever the
+	# remote has under it, and origin carrying a tag of the same name as the
+	# branch is "dst refspec matches more than one" - the whole push refused.
+	# The local side takes bare names, the only ones "git branch -D" accepts.
+	REMOTE_REFS=()
+	for BRANCH in "${REMOTE_BRANCHES[@]}"; do
+		REMOTE_REFS+=("refs/heads/$BRANCH")
+	done
+	gitrun_failonerror push origin --delete "${REMOTE_REFS[@]}"
 fi
 if [ ${#LOCAL_BRANCHES[@]} -gt 0 ]; then
 	gitrun_failonerror branch -D "${LOCAL_BRANCHES[@]}"
