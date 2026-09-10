@@ -33,6 +33,10 @@ Current version: 0.0.4.SNAPSHOT
   push - a protected-ref rule, a lost race - ends the run with `BUILD FAILURE`
   and the local branches still in place, where before the local deletion went
   ahead regardless and the run claimed success
+* `resolved sync` writes your `-m` message to a file and commits it with
+  `git commit -F`, the way `to-staging` already did, instead of a command
+  string that `emit` re-parses. `-m 'oops $(id)'` ran `id`, and what git kept
+  as the message was whatever text the shell had left over
 * `closed` reads branch names by component count, `%(refname:lstrip=2)` and
   `lstrip=3`, rather than `%(refname:short)`, which shortens only as far as
   stays unambiguous: with a local branch named `origin/ABC-123` in the
