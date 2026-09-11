@@ -45,10 +45,10 @@ and `closed` until production has been pushed.
 Rules
 -----
 
-1. **Decide on the printed result, not the exit status.** Every run ends with
-   `[INFO] BUILD SUCCESS` or `[INFO] BUILD FAILURE`, and some failures still exit
-   0. Read the last lines and the `[ERROR]` lines above them; never report a
-   stage as done without seeing `BUILD SUCCESS`.
+1. **Decide on the printed result.** Every run ends with `[INFO] BUILD SUCCESS`
+   or `[INFO] BUILD FAILURE`, and exits 0 or 1 to match, so either one answers.
+   Read the last lines and the `[ERROR]` lines above them; never report a stage
+   as done without seeing `BUILD SUCCESS`.
 2. **Never push staging or production.** `to-staging` and `deployable` stop with
    the commits sitting in the local branch, and that manual push is deliberate.
    Show what is queued (`git log --oneline origin/staging..staging`) and let the

@@ -6,12 +6,19 @@
 # $2 - "quiet" to throw its output away, "print_msg" to report it through [INFO];
 #      without it the command writes straight to the terminal
 #
+# A command that fails raises WF_STATUS, and nothing lowers it again: the status
+# is the outcome of the run and not of its last command. It used to be assigned
+# outright, so in-progress reporting a push it could not make went on to a pull
+# that worked and ended the run with BUILD SUCCESS.
+#
 function emit() {
 	if [ "$2" == "quiet" ]; then
 		eval $1 >/dev/null 2>&1
 	elif [ "$2" == "print_msg" ]; then
 		$(eval $1 >$WF_DIR/output.log 2>&1)
-		WF_STATUS=$?
+		if [ $? -gt 0 ]; then
+			WF_STATUS=1
+		fi
 		print_msg "`tail $WF_DIR/output.log`"
 	else
 		eval $1
@@ -19,30 +26,33 @@ function emit() {
 }
 
 #
-# The same, but a failing command ends the run. In "print_msg" mode it is quiet
-# while the command succeeds and reports through [ERROR] when it does not.
+# The same, but a failing command ends the run, reporting BUILD FAILURE like
+# every other way out. In "print_msg" mode it is quiet while the command
+# succeeds and reports through [ERROR] when it does not.
+#
+# The status is kept apart from WF_STATUS: a failure raised earlier in the run
+# would otherwise read here as this command having failed.
 #
 function emit_failonerror() {
+	local STATUS
 	if [ "$2" == "quiet" ]; then
 		eval $1 >/dev/null 2>&1
-		if [ $? -gt 0 ]; then
-			exit 1
-		fi
+		STATUS=$?
 	elif [ "$2" == "print_msg" ]; then
 		$(eval $1 >$WF_DIR/output.log 2>&1)
-		WF_STATUS=$?
-		if [ $WF_STATUS -gt 0 ]; then
+		STATUS=$?
+		if [ $STATUS -gt 0 ]; then
 			print_err "`tail $WF_DIR/output.log`"
-			print_msg - line
-			print_msg "BUILD FAILURE"
-			print_msg - line
-			exit 1
 		fi
 	else
 		eval $1
-		if [ $? -gt 0 ]; then
-			exit 1
-		fi
+		STATUS=$?
+	fi
+
+	if [ $STATUS -gt 0 ]; then
+		WF_STATUS=1
+		print_build_msg
+		exit 1
 	fi
 }
 

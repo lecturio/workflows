@@ -21,8 +21,9 @@ Every run does the same preflight before the stage: fetches this tool's own clon
 and stops if it is behind its remote, checks `ssh -T git@github.com`, requires the
 current directory to be inside a git clone, reads that repo's `origin` URL, loads
 `.gitflow` if present, then runs `git fetch` and `git remote prune origin` in the
-project. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`. Output of the
-noisier commands is written to `output.log` in the tool's own directory.
+project. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1
+to match, so a run can be read by a script, a CI step or an `&&` chain. Output of
+the noisier commands is written to `output.log` in the tool's own directory.
 
 Every stage works on a branch it checks out first, and acts on whatever is
 checked out afterwards, so a checkout that fails ends the run then and there with

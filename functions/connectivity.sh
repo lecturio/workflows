@@ -9,8 +9,10 @@ function check_update() {
 	SELF_UPDATE=`emit "git rev-list --left-right --boundary @{u}..."`
 	
 	if [ "$SELF_UPDATE" ]; then
+		WF_STATUS=1
 		print_err "Update workflows to the latest version"
 		print_msg "gitflow self update"
+		print_build_msg
 		exit 1
 	fi
 }

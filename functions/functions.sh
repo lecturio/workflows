@@ -12,10 +12,12 @@ COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
 #
 function validate_input_params() {
 	if [[ -z $WF_TASK || -z $WF_COMMAND ]]; then
+		WF_STATUS=1
 		echo "Provide parameters: gitflow JIRA-001 in-progress"
 		echo "feature name (required)"
 		echo "goal (required)"
 		echo "option (optional for goal)"
+		print_build_msg
 		exit 1
 	fi
 
@@ -28,12 +30,14 @@ function validate_input_params() {
 	done
 
 	if [ $VALID_CMD -eq 0 ]; then
+		WF_STATUS=1
 		echo -n "Available commands are: "
 		for CMD in "${COMMANDS[@]}"
 		do
 			echo -n $CMD" "
 		done
 		echo 
+		print_build_msg
 		exit 1 
 	fi
 
@@ -121,6 +125,10 @@ function github_ref_encode() {
 	printf '%s' "$out"
 }
 
+#
+# The last thing a run prints, and what its exit status is taken from: 0 for
+# BUILD SUCCESS, 1 for BUILD FAILURE. Every way out of the tool goes past it.
+#
 function print_build_msg() {
 	print_msg - line
 	if [ $WF_STATUS -eq 0 ]; then
