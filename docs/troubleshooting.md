@@ -18,7 +18,10 @@ Error messages
 | `Available commands are: in-progress to-staging resolved deployable closed pr` | the stage name is not one of those six | note it is `deployable`, not `deployed` |
 | `[ERROR] Invalid branch name for WF_TASK: …` | the ticket ID has characters the tool refuses | names must match `^[A-Za-z0-9][-A-Za-z0-9._/]*$` |
 | `[ERROR] Configured branch origin/devel does not exist` | `.gitflow` (or the environment) names a branch that isn't on `origin` | fix the name or push the branch |
+| `[ERROR] Cannot read /path/to/project/.gitflow: …` | a line of `.gitflow` is not `KEY=value`, a `#` comment or blank. It stops the run: these keys decide which shared branch the work goes to, and skipping the line used to leave `master` and `staging` in use while the file asked for other names | fix the line. Spaces around the `=` are fine and the value may be quoted or bare |
 | `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | `to-staging` and `resolved` weigh the ticket branch against origin's copy, and one of the two is not there - usually a typo'd ticket, or a branch that never left this machine | check the name with `git branch -a`; run `in-progress` for a ticket that has not started, or `git push` one that only exists locally |
+| `[ERROR] deployable works on the branch ABC-123, and it is not in this repository` | `deployable` rebases the local ticket branch, and there is none - usually a typo'd ticket, or a clone that never had it | check the name with `git branch`, or run `in-progress`, which creates it from origin or from production |
+| `[ERROR] No branch here or on origin matches ABC-123 - nothing to delete` | `closed` found no branch with the ticket in its name; it used to report `BUILD SUCCESS` for that | check the name with `git branch -a`; the ticket may already have been closed |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them or stash them; untracked files never block it |
 | `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved. `to-staging`, `resolved` and `deployable` all refuse while it is | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
@@ -172,6 +175,14 @@ gitflow ABC-1[tab]      # completes local branches
 gitflow origin/[tab]    # completes remote branches
 gitflow ABC-123 [tab]   # completes stage names
 ```
+
+The ticket slot offers branches and nothing else. Production and staging are left
+out of it, since they are exactly the names `closed` refuses, and a project that
+renames them in `.gitflow` has its own two names left out instead. Before 0.0.4
+the slot was filled from raw `git branch` output, so the `* ` marking the branch
+you are on glob-expanded into the names of the files in the repository root, and
+in detached HEAD the four words of `(HEAD detached at 1a2b3c4)` were offered as
+four tickets.
 
 The script is a bash completion (`complete -F`). zsh reads neither `~/.profile`
 nor `complete`, so zsh users have to load it through `bashcompinit`, after

@@ -147,6 +147,11 @@ if needs_github_key; then
 	fi
 fi
 
+print_msg "Scanning for tasks..."
+print_msg - line
+
+# Below the banner, so what the file has to say about itself reads as part of
+# the run rather than ahead of the line that opens it.
 load_gitflow "$WF_GIT_ROOT/.gitflow"
 : "${WF_PROD_BRANCH:=master}"
 : "${WF_STAGING_BRANCH:=staging}"
@@ -154,9 +159,6 @@ require_safe_branch_name "$WF_PROD_BRANCH" "WF_PROD_BRANCH"
 require_safe_branch_name "$WF_STAGING_BRANCH" "WF_STAGING_BRANCH"
 export WF_PROD_BRANCH
 export WF_STAGING_BRANCH
-
-print_msg "Scanning for tasks..."
-print_msg - line
 
 # global options support: -m "message", -m"message", --message "message",
 # --message=message, and the unquoted -m message with the words after it

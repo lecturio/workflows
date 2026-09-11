@@ -21,7 +21,8 @@ the review needs, and folded back into production once it is accepted.
 
 If the project has a `.gitflow` file at its repository root, read it first — it
 renames those two branches (`WF_PROD_BRANCH`, `WF_STAGING_BRANCH`), and every
-example below then applies to the names it sets.
+example below then applies to the names it sets. A line of it the tool cannot
+read stops every run until it is fixed, rather than falling back to the defaults.
 
 The stages
 ----------
@@ -134,8 +135,10 @@ gitflow ABC-123 deployable
 
 Rebases the ticket onto production, then moves production onto the ticket, so
 production ends up carrying the ticket's own commits with no merge commit. Leaves
-you on production, ahead of `origin/master`. Show the user
-`git log --oneline -5` and the push; the push is theirs.
+you on production, ahead of `origin/master`, and ends on
+`[INFO] Now push it: git push origin master`. Show the user `git log --oneline -5`
+and that line; the push is theirs. It also refuses a ticket branch that is not in
+the repository, which is usually a typo in the ticket.
 
 Run it once, at the end, after the ticket has been accepted on staging. Conflicts
 almost always land in the first rebase — see [conflicts.md](conflicts.md).
@@ -152,7 +155,8 @@ gitflow ABC-123 closed
 ```
 
 Deletes the ticket's branches, local and remote, and leaves you on production.
-Ask first (rule 4). Branches are matched on the ticket as a whole word inside the
+Ask first (rule 4). A ticket nothing matches is refused - `No branch here or on
+origin matches ABC-123 - nothing to delete` - rather than reported as a success. Branches are matched on the ticket as a whole word inside the
 branch name, so a prefix narrows the deletion: `gitflow ABC-123-track closed`
 removes only the bookmarks and leaves `ABC-123` alone. The production and staging
 branches are never deleted, whether they are named in the ticket slot or matched

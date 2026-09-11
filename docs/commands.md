@@ -18,17 +18,18 @@ refuse a word they have no meaning for by name rather than ignoring it.
 `self` is a reserved word in the ticket slot: it addresses the tool itself, so it
 can never be a ticket. See [tool commands](#tool-commands).
 
-Every run does the same preflight before the stage: fetches this tool's own clone
-and stops if it is behind its remote, requires the current directory to be inside
-a git clone, reads that repo's `origin` URL, checks `ssh -T git@github.com` for a
-loaded key when that URL is an ssh one on github.com and the stage is not `pr` -
-stopping both when ssh refuses and when ssh cannot be run at all -
-loads `.gitflow` if present, then runs `git fetch` and `git remote prune origin`
-in the project and stops if that fetch fails, rather than work from refs it could
-not update. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1
-to match, so a run can be read by a script, a CI step or an `&&` chain. Output of
-the noisier commands is written to a log of the run's own under `$TMPDIR`, or
-under `/tmp` when that is unset.
+Every run does the same preflight before the stage: fetches this tool's own
+clone and stops if it is behind its remote, requires the current directory to be
+inside a git clone, reads that repo's `origin` URL, checks `ssh -T
+git@github.com` for a loaded key when that URL is an ssh one on github.com and
+the stage is not `pr` - stopping both when ssh refuses and when ssh cannot be
+run at all - loads `.gitflow` if present and stops if a line of it cannot be
+read, then runs `git fetch` and `git remote prune origin` in the project and
+stops if that fetch fails, rather than work from refs it could not update. It
+finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1 to match, so
+a run can be read by a script, a CI step or an `&&` chain. Output of the noisier
+commands is written to a log of the run's own under `$TMPDIR`, or under `/tmp`
+when that is unset.
 
 Every stage works on a branch it checks out first, and acts on whatever is
 checked out afterwards, so a checkout that fails ends the run then and there with
@@ -110,7 +111,7 @@ git checkout staging && git pull --rebase origin staging
 git cherry-pick -Xignore-all-space -n <range>
 git commit -F <generated message>
 git checkout ABC-123
-git branch --track ABC-123-track-N            # N = previous highest + 1
+git branch ABC-123-track-N                    # N = previous highest + 1
 git checkout ABC-123-track-N
 git push origin ABC-123-track-N
 git checkout staging && git pull --rebase origin staging
@@ -255,7 +256,25 @@ git checkout master  && git rebase -Xignore-all-space ABC-123
 ```
 
 Leaves you on production, ahead of `origin/master` by the ticket's commits.
-**Pushing production is yours**, after reviewing the log.
+**Pushing production is yours**, after reviewing the log, and the stage ends by
+naming it:
+
+```
+[INFO] Now push it: git push origin master
+```
+
+The line is left out when the rebases moved production nowhere - a ticket already
+in production, a second run - since there is then nothing to push.
+
+The ticket branch has to be in the repository. A name nothing answers to is
+refused before the fetch, where it used to leak git's own
+`fatal: ambiguous argument 'origin/ABC-124..ABC-124'` from the pending-commits
+check and then fail on the checkout behind it:
+
+```
+[ERROR] deployable works on the branch ABC-124, and it is not in this repository
+[INFO] Check the name with git branch, or start the ticket: gitflow ABC-124 in-progress
+```
 
 Conflicts almost always land in the first rebase (ticket onto production); the
 second one is usually a fast-forward. `git status` tells you which of the two you
@@ -303,6 +322,13 @@ passing a prefix narrows the deletion: `gitflow ABC-123-track closed` removes th
 tracking branches and leaves `ABC-123` in place. That is the first half of the
 [staging re-sync](troubleshooting.md#staging-was-recreated). Only `origin` is
 searched for the remote branches, so a second remote keeps its copies.
+
+A ticket that matches nothing, here or on origin, is refused rather than reported
+as a run that deleted what it found:
+
+```
+[ERROR] No branch here or on origin matches ABC-124 - nothing to delete
+```
 
 The deployed branches are never deleted. `gitflow staging closed` and
 `gitflow master closed` are refused, and a ticket that happens to match one of
@@ -385,5 +411,19 @@ Variables
 
 `.gitflow` lives at the project's repository root and is meant to be committed, so
 that everyone on the project uses the same branch names. It takes `KEY=value`
-lines; blank lines and `#` comments are ignored, and unknown keys are reported and
+lines, with spaces around the `=` if you want them and the value quoted or not;
+blank lines and `#` comments are ignored, and unknown keys are reported and
 skipped. Values in the file override the environment.
+
+A line that is none of those stops the run, naming the file and the line:
+
+```
+[ERROR] Cannot read /path/to/project/.gitflow: WF_STAGING_BRANCH:devel
+[INFO] A line is KEY=value, a # comment, or blank
+```
+
+These two keys decide which shared branch the work goes to, so a line that cannot
+be read is worth stopping for. Skipping it left the run using `master` and
+`staging` while the file asked for something else, and on a project that has both
+the old names and the new ones the ticket went onto the wrong shared branch under
+`BUILD SUCCESS`.

@@ -176,14 +176,16 @@ git push origin staging
 ```bash
 git commit -am "ABC-123 add the thing"        # only when -m is given
 git checkout ABC-123
-git branch --track ABC-123-track-N            # N = previous highest + 1
+git branch ABC-123-track-N                    # N = previous highest + 1
 git checkout ABC-123-track-N
 git push origin ABC-123-track-N
 git checkout staging && git pull --rebase origin staging
 ```
 
 Leaves you on staging, one commit ahead of `origin/staging`. **The push is
-yours** — the tool prints `git push staging` as a reminder but does not push.
+yours** — the tool prints `Now push it: git push origin staging` as a reminder but
+does not push. Before 0.0.4 the reminder read `git push staging`, which is not a
+command anybody can run.
 
 `-m` is optional. Commit the staged changes yourself (IDE, or
 `git commit -am "…"`) and then run `gitflow ABC-123 resolved sync` with no

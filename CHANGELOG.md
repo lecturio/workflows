@@ -52,6 +52,15 @@ Current version: 0.0.4.SNAPSHOT
   reported it again on every run after, because nothing had been written for the
   next run's check to find. That now ends the run with bash's own reason and the
   lines to put in the file by hand
+* tab completion in the ticket slot offers branches and nothing else. It was
+  filled from raw `git branch` output, so the `* ` in front of the branch you
+  are on glob-expanded and offered the names of the files in the repository
+  root, and in detached HEAD the four words of `(HEAD detached at 1a2b3c4)`
+  came up as four tickets. Names are read through `git for-each-ref`, which
+  prints refs and only refs. Production and staging are left out of the slot -
+  they are exactly the two names `closed` refuses - and a project that renames
+  them in `.gitflow` has its own two left out instead, which the completion
+  reads the way a run does
 * a tool clone whose directory name contains a space works. `$WF_DIR` was
   expanded bare, so `functions/` was never sourced and the run ended on
   `check_github: command not found` diagnosed as a missing ssh key - 127 passed
@@ -113,6 +122,38 @@ Current version: 0.0.4.SNAPSHOT
   `git commit -F`, the way `to-staging` already did, instead of a command
   string that `emit` re-parses. `-m 'oops $(id)'` ran `id`, and what git kept
   as the message was whatever text the shell had left over
+* the tracking bookmarks are created with a plain `git branch`. With
+  `--track` and no start point git took HEAD - the ticket branch - as the thing
+  to track and wrote `branch.ABC-123-track-1.remote = .` with
+  `merge = refs/heads/ABC-123`, so the bookmark followed the local ticket branch
+  and a `git pull` or `git status` on it answered about the ticket's upstream. A
+  bookmark records where the tip was and nothing else
+* `resolved sync` prints `Now push it: git push origin staging`, the reminder
+  `to-staging` prints. It used to print `git push staging`, which is not a
+  command anybody can run - it reads as pushing to a remote called staging
+* `deployable` prints `Now push it: git push origin master`, which it never did:
+  the documented flow says all three of the stages that leave a shared branch
+  ahead print the push, and this one ended on git's own
+  `Successfully rebased and updated refs/heads/master`, which says a rebase
+  happened and nothing about what is left to do. It is left out when the rebases
+  moved production nowhere
+* `deployable` and `closed` refuse a ticket branch that is not there. Neither
+  looked: `deployable` leaked git's own
+  `fatal: ambiguous argument 'origin/NOPE-9..NOPE-9'` from its pending-commits
+  check and then failed on the checkout behind it, and `closed` matched nothing,
+  deleted nothing and reported `BUILD SUCCESS`, which reads as the branches
+  having been there and gone
+* the rule `print_msg` draws is as wide as the terminal on a narrow one. The
+  `[INFO] ` prefix is seven columns and BSD `seq` counts downwards below one, so
+  a one-column terminal got `seq -6` and an eight-dash rule, and a seven-column
+  one got two dashes out of `seq 0`; the dashes are counted now, and a terminal
+  with no room for them gets none
+* `in-progress` asks whether the branch is on origin with `[ -n "…" ]` rather
+  than an unquoted `[ $EXISTS_REMOTELY ]`, whose single argument was whatever
+  the listing word-split into: `gitflow HEAD in-progress` printed
+  `[: ->: binary operator expected` out of git's
+  `origin/HEAD -> origin/master` before the stage went on. `emitgit_abort_rebase`,
+  which nothing has called since `deployable` stopped aborting rebases, is gone
 * `closed` reads branch names by component count, `%(refname:lstrip=2)` and
   `lstrip=3`, rather than `%(refname:short)`, which shortens only as far as
   stays unambiguous: with a local branch named `origin/ABC-123` in the
@@ -168,6 +209,16 @@ Current version: 0.0.4.SNAPSHOT
   run, and `WF_VERBOSE` never did anything. A leftover `config.sh` is now ignored
   and can be deleted; branch names come from the project's `.gitflow` or the
   environment
+* `.gitflow` takes spaces around the `=`, so `WF_STAGING_BRANCH = "devel"` is
+  read rather than dropped, and a line that still cannot be read stops the run
+  with the file and the line named instead of `Ignoring invalid line` and a
+  fallback behind it. These two keys decide which shared branch the work goes
+  to: on a project that had kept its old `staging` alongside the `devel` the
+  file asked for, the spaced line was skipped and `to-staging` cherry-picked the
+  ticket onto `staging`, committed it there, bookmarked the round and reported
+  `BUILD SUCCESS`. What the file has to say is also printed below the
+  `Scanning for tasks...` banner now, rather than above the line that opens the
+  run
 * new stage `to-staging` puts a ticket on staging in one command: it cherry-picks,
   commits and bookmarks, writing a commit message that names the commits it picked
   (`ABC-123 a1b2c3d 4e5f6a7`), and leaves the push to you

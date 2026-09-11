@@ -23,6 +23,9 @@ require_origin_branch "$WF_STAGING_BRANCH"
 track_feature_branch
 setup_branch "$WF_STAGING_BRANCH"
 
+# "git push staging" is not a command anybody can run - it reads as pushing to a
+# remote called staging - and the push this stage leaves you is the one
+# to-staging names: git push origin staging.
 if [ $WF_STATUS -eq 0 ]; then
-	print_msg "git push $WF_STAGING_BRANCH"
+	print_msg "Now push it: git push origin $WF_STAGING_BRANCH"
 fi

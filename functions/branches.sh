@@ -48,6 +48,31 @@ function require_staging_checked_out() {
 }
 
 #
+# Fail when the ticket branch is not in this repository.
+#
+# The stages that bring it into existence check for themselves - in-progress
+# creates it, to-staging and resolved weigh it against origin's copy - but
+# deployable and closed used to act on a name nobody had checked: deployable
+# leaked git's own "fatal: ambiguous argument 'origin/NOPE-9..NOPE-9'" out of
+# its pending-commits check before failing on the checkout behind it, and
+# closed matched nothing, deleted nothing and reported BUILD SUCCESS. A stage
+# asked to act on a branch that is not there says so and stops.
+# $1 - stage name, for the message
+#
+function require_ticket_branch() {
+	emit "git rev-parse --verify --quiet refs/heads/$WF_TASK" quiet
+	if [ $? -eq 0 ]; then
+		return 0
+	fi
+
+	WF_STATUS=1
+	print_err "$1 works on the branch $WF_TASK, and it is not in this repository"
+	print_msg "Check the name with git branch, or start the ticket: gitflow $WF_TASK in-progress"
+	print_build_msg
+	exit 1
+}
+
+#
 # Name prefix of the ticket's tracking branches: ABC-123-track-
 #
 function track_branch_ns() {
@@ -114,6 +139,13 @@ function cherry_pick_range() {
 # Bookmark the ticket-branch tip that was just put on staging, and push it.
 # Leaves you on the new tracking branch.
 #
+# A plain "git branch". It used to be "git branch --track", which with no start
+# point takes HEAD - the ticket branch - as the thing to track, and wrote
+# branch.ABC-123-track-1.remote = . with merge = refs/heads/ABC-123: the
+# bookmark followed the local ticket branch, so a "git pull" or "git status" on
+# it answered about the ticket's own upstream. A bookmark records where the tip
+# was, which is the commit it points at and nothing else.
+#
 function track_feature_branch() {
 	local CURRENT_BRANCH=`emit "git rev-parse --abbrev-ref HEAD"`
 
@@ -123,7 +155,7 @@ function track_feature_branch() {
 
 	local TRACK_BRANCH="$(track_branch_ns)$(next_track_num)"
 
-	emit_failonerror "git branch --track ${TRACK_BRANCH}" print_msg
+	emit_failonerror "git branch ${TRACK_BRANCH}" print_msg
 	emitgit_checkout "${TRACK_BRANCH}"
 	emit_failonerror "git push origin ${TRACK_BRANCH}" print_msg
 }
