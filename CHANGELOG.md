@@ -216,9 +216,12 @@ Current version: 0.0.4.SNAPSHOT
   to: on a project that had kept its old `staging` alongside the `devel` the
   file asked for, the spaced line was skipped and `to-staging` cherry-picked the
   ticket onto `staging`, committed it there, bookmarked the round and reported
-  `BUILD SUCCESS`. What the file has to say is also printed below the
-  `Scanning for tasks...` banner now, rather than above the line that opens the
-  run
+  `BUILD SUCCESS`. A file that is there and cannot be opened stops the run for
+  the same reason: the read failed before the first line, nothing but bash's own
+  `Permission denied` said so, and the run went on to cut the ticket from the
+  branch the file had been written to replace. What the file has to say is also
+  printed below the `Scanning for tasks...` banner now, rather than above the
+  line that opens the run
 * new stage `to-staging` puts a ticket on staging in one command: it cherry-picks,
   commits and bookmarks, writing a commit message that names the commits it picked
   (`ABC-123 a1b2c3d 4e5f6a7`), and leaves the push to you

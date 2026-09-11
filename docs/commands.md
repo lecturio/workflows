@@ -422,6 +422,14 @@ A line that is none of those stops the run, naming the file and the line:
 [INFO] A line is KEY=value, a # comment, or blank
 ```
 
+A file that is there and cannot be opened stops the run the same way, naming
+itself:
+
+```
+[ERROR] Cannot read /path/to/project/.gitflow
+[INFO] It names the branches the run works on; make it readable, or remove it to fall back to the environment and the defaults
+```
+
 These two keys decide which shared branch the work goes to, so a line that cannot
 be read is worth stopping for. Skipping it left the run using `master` and
 `staging` while the file asked for something else, and on a project that has both

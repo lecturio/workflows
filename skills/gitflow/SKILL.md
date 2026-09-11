@@ -22,7 +22,8 @@ the review needs, and folded back into production once it is accepted.
 If the project has a `.gitflow` file at its repository root, read it first — it
 renames those two branches (`WF_PROD_BRANCH`, `WF_STAGING_BRANCH`), and every
 example below then applies to the names it sets. A line of it the tool cannot
-read stops every run until it is fixed, rather than falling back to the defaults.
+read stops every run until it is fixed, and so does a file that is there and
+cannot be opened, rather than falling back to the defaults.
 
 The stages
 ----------
@@ -136,8 +137,10 @@ gitflow ABC-123 deployable
 Rebases the ticket onto production, then moves production onto the ticket, so
 production ends up carrying the ticket's own commits with no merge commit. Leaves
 you on production, ahead of `origin/master`, and ends on
-`[INFO] Now push it: git push origin master`. Show the user `git log --oneline -5`
-and that line; the push is theirs. It also refuses a ticket branch that is not in
+`[INFO] Now push it: git push origin master` - left out when the rebases moved
+production nowhere, which is a ticket already in production or a second run. Show
+the user `git log --oneline -5` and that line when it is there; the push is
+theirs. It also refuses a ticket branch that is not in
 the repository, which is usually a typo in the ticket.
 
 Run it once, at the end, after the ticket has been accepted on staging. Conflicts

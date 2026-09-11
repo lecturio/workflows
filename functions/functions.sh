@@ -157,6 +157,20 @@ function load_gitflow() {
 		return 0
 	fi
 
+	# A file that is there and cannot be opened is not the same as no file at
+	# all. The redirection below fails, the loop never runs, and the run went on
+	# with master and staging while the file asked for other names: on a project
+	# that still had the old pair beside the new one, `in-progress` cut the
+	# ticket from the abandoned `master` and reported BUILD SUCCESS, with bash's
+	# own `Permission denied` on stderr the only thing that had said anything.
+	if [ ! -r "$GITFLOW_FILE" ]; then
+		WF_STATUS=1
+		print_err "Cannot read $GITFLOW_FILE"
+		print_msg "It names the branches the run works on; make it readable, or remove it to fall back to the environment and the defaults"
+		print_build_msg
+		exit 1
+	fi
+
 	local line key value
 	while IFS= read -r line || [ -n "$line" ]; do
 		line="${line%$'\r'}"
