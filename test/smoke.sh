@@ -52,8 +52,23 @@ git_t() {
 	git -c user.email=smoke@test -c user.name=smoke "$@"
 }
 
-# a copy of the tool, with an origin of its own so the update check passes
 mkdir -p "$ROOT/tool" "$ROOT/bin" "$ROOT/home" "$ROOT/tmp"
+
+#
+# Everything below runs against this environment, the repositories built here
+# included: with your own HOME in place they would be created under your git
+# configuration, and a "commit.gpgSign" or a "core.hooksPath" of yours would
+# reach into a fixture that has nothing to do with them. The two branch names
+# are unset for the same reason - the tool reads them from the environment when
+# a project has no .gitflow, and a shell holding "main" would send these stages
+# looking for branches this fixture never creates.
+#
+export HOME="$ROOT/home"
+export TMPDIR="$ROOT/tmp"
+export PATH="$ROOT/bin:$PATH"
+unset WF_PROD_BRANCH WF_STAGING_BRANCH
+
+# a copy of the tool, with an origin of its own so the update check passes
 tar -C "$TOOL_SRC" --exclude=.git -cf - . | tar -C "$ROOT/tool" -xf - || exit 1
 git init -qb master "$ROOT/tool"
 git -C "$ROOT/tool" add -A
@@ -80,12 +95,10 @@ git checkout -qb staging
 git push -q -u origin staging
 git checkout -q master
 
-export HOME="$ROOT/home"
-export TMPDIR="$ROOT/tmp"
-export PATH="$ROOT/bin:$PATH"
 
 stage ABC-123 in-progress
 check "in-progress exits 0" 0 "$STATUS"
+check "in-progress reports success" yes "`says 'BUILD SUCCESS'`"
 check "in-progress leaves you on the ticket" ABC-123 "`git rev-parse --abbrev-ref HEAD`"
 check "in-progress pushes the ticket" 0 "`git rev-parse -q --verify origin/ABC-123 >/dev/null; echo $?`"
 
@@ -100,6 +113,7 @@ check "pr reports the failure" yes "`says 'BUILD FAILURE'`"
 
 stage ABC-123 to-staging -m "sync it"
 check "to-staging exits 0" 0 "$STATUS"
+check "to-staging reports success" yes "`says 'BUILD SUCCESS'`"
 check "to-staging commits the pick" "sync it" "`git log -1 --format=%s staging`"
 check "to-staging leaves nothing staged" "" "`git status --porcelain`"
 
@@ -114,11 +128,13 @@ check "to-staging refuses an unknown ticket" 1 "$STATUS"
 git checkout -q ABC-123
 stage ABC-123 deployable
 check "deployable exits 0" 0 "$STATUS"
+check "deployable reports success" yes "`says 'BUILD SUCCESS'`"
 check "deployable puts the work on production" "the work" "`git log -1 --format=%s master`"
 git push -q origin master
 
 stage ABC-123 closed
 check "closed exits 0" 0 "$STATUS"
+check "closed reports success" yes "`says 'BUILD SUCCESS'`"
 check "closed deletes the ticket locally" 1 "`git rev-parse -q --verify ABC-123 >/dev/null; echo $?`"
 check "closed deletes the ticket on origin" 1 "`git rev-parse -q --verify origin/ABC-123 >/dev/null; echo $?`"
 
