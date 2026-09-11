@@ -206,6 +206,37 @@ Current version: 0.0.4.SNAPSHOT
   for the three stages that apply commits, rather than inside `to-staging`.
   Nothing about `to-staging` changed: the same messages, in the same order, for
   the same states
+* `resolved` refuses a word it has no meaning for instead of quietly running
+  nothing. The stage guarded its whole body with `if [ "$WF_ENV" == "" ]` and
+  `workflow.sh` sourced the sync half only for exactly `sync`, so
+  `gitflow ABC-123 resolved snyc` and `gitflow ABC-123 resolved -m 'msg'` fell
+  between the two, did nothing at all and ended `BUILD SUCCESS`, which reads as
+  a sync that happened. `sync` is the only option it takes and `-m` belongs to
+  that half, so anything else is named in the error along with a usage line;
+  `-m` with an empty message is an error too, rather than a fall back to
+  bookmarking work that was never committed
+* a cherry-pick that conflicts or fails in `resolved` ends the run
+  `BUILD FAILURE`. The stage ran `git cherry-pick` without looking at the
+  result and printed its advice regardless, so a `CONFLICT (content)` with
+  `UU a.txt` in the tree came out as `BUILD SUCCESS` and exit 0, and a
+  `&&` chain carried on from it. Stopping on a conflict is what the stage is
+  for - `-n` leaves the resolution staged for review, and nothing is aborted -
+  but nothing has reached staging while the round is unfinished, so the run
+  reports that rather than success. It is the state `to-staging` already
+  reported, so its two reporters moved to `functions/inflight.sh` instead of
+  being written a second time, and `to-staging`'s own output is unchanged. An
+  empty range is reported as one, where the pick used to fail with
+  `error: empty commit set passed` under `BUILD SUCCESS`
+* the advice `resolved` prints is runnable, and printed only where it applies.
+  `Run "git cherry-pick --continue" after conflict resolution` is what git
+  refuses while the resolution sits staged, which is exactly what `-n` leaves
+  you with; `Run "gitflow ABC-123 resolved sync -m" and put commit message` is
+  not a command anybody can run; and both of those, with
+  `possible data loss if merge is incorrect` and a `git status` for `conflits`,
+  were printed on every run, clean ones included. A clean pick says what is
+  staged and how to commit and bookmark it, and a conflicted one gets the
+  shared advice, which accounts for the commits still queued behind the
+  conflict
 * a cherry-pick that fails without a conflict, a merge commit in the range being
   the usual reason, is reported as itself instead of as a conflict to resolve,
   and is told apart from a resolution waiting to be committed by whether the

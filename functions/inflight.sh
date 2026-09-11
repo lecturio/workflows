@@ -409,3 +409,54 @@ function refuse_finished_pick_state() {
 	print_build_msg
 	exit 1
 }
+
+#
+# How a pick a stage has just run ended. Both stages cherry-pick with -n and
+# neither commits anything git could not apply, so the two ways out are the
+# same for both: "git ls-files -u" says whether there is a conflict to resolve,
+# and the status says whether git failed for some other reason.
+#
+
+#
+# Report the conflict and leave it alone: the sequencer's todo names the commit
+# that stopped us and everything still queued behind it.
+#
+function fail_on_conflict() {
+	WF_STATUS=1
+	print_err "Cherry-pick onto $WF_STAGING_BRANCH conflicts - nothing was committed"
+
+	local STOPPED="`stopped_on_commit`"
+	if [ -n "$STOPPED" ]; then
+		print_msg "Stopped on $STOPPED"
+	fi
+
+	print_conflict_recovery "`pending_pick_count`"
+	print_msg "Or start over with: git cherry-pick --abort"
+
+	print_build_msg
+	exit 1
+}
+
+#
+# The cherry-pick failed without leaving a conflict behind, so git has already
+# printed the reason - a merge commit in the range is the usual one, since
+# cherry-pick will not apply one without being told which side to keep.
+# Whatever applied before it is staged, and committing that would put half a
+# range on staging under a bookmark claiming all of it, so the way out is to
+# throw it away rather than to sync it.
+# $1 - the range that was picked
+#
+function fail_on_pick_error() {
+	WF_STATUS=1
+	print_err "Cherry-pick onto $WF_STAGING_BRANCH failed - git's reason is above"
+	print_msg "Nothing was committed and no bookmark was made"
+
+	if [ -n "`git log --merges --format=%h -1 "$1"`" ]; then
+		print_msg "$1 holds a merge commit, which cherry-pick cannot apply"
+	fi
+
+	print_msg "Throw away what did apply with: git cherry-pick --abort"
+
+	print_build_msg
+	exit 1
+}

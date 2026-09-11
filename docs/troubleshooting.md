@@ -22,17 +22,18 @@ Error messages
 | `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them or stash them; untracked files never block it |
 | `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved. `to-staging`, `resolved` and `deployable` all refuse while it is | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
-| `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
+| `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` or `resolved` could not apply the range cleanly. Both stop on it with `BUILD FAILURE`: the pick is left as git left it, but nothing reached staging | resolve it as the message says, or `git cherry-pick --abort` |
 | `[ERROR] to-staging takes no option other than -m: gitflow ABC-123 to-staging [-m "message"]` | a word other than the `-m` forms followed the stage | drop it; `sync` belongs to `resolved`, not to this stage, and no other flag is accepted |
+| `[ERROR] resolved does not take "snyc": gitflow ABC-123 resolved [sync [-m "message"]]`, or `[ERROR] resolved sync does not take "…"` | a word the stage has no meaning for. `sync` is the only option it takes, and `-m` belongs to `resolved sync` | check the spelling of `sync`; before 0.0.4 a word like this ran nothing and still reported `BUILD SUCCESS` |
 | `[ERROR] A cherry-pick on staging still has 1 commit(s) to apply` | a conflict was resolved and committed, but the rest of the range was never applied | `git cherry-pick --continue`, then `gitflow ABC-123 resolved sync -m "…"`; or `git cherry-pick --abort` to give up on the rest |
 | `[ERROR] A cherry-pick is paused on staging with its conflicts already resolved` | a cherry-pick you started by hand is waiting for `--continue` | finish it with `git cherry-pick --continue`, or drop it with `git cherry-pick --abort` |
 | `[ERROR] A cherry-pick on staging has nothing left to apply and was never cleared` | the last commit of a conflicted sync was committed by hand, so nothing is queued, but git still counts the pick as in progress and refuses the next one | bookmark the round with `gitflow ABC-123 resolved sync` if that has not been done, then `git cherry-pick --quit`, which keeps your index. `to-staging` clears this one itself |
 | `[ERROR] A rebase with unresolved conflicts is in progress on …` (or `merge`, `revert`, `An am`) | another git operation is half-finished, and no stage runs over one: `to-staging`, `resolved` and `deployable` each stop and name it | finish it, or `git rebase --abort` / `git merge --abort` / `git revert --abort` / `git am --abort`; then re-run the stage |
-| `[ERROR] Cherry-pick onto staging failed - git's reason is above` | the cherry-pick failed without a conflict, usually a merge commit in the range | read git's message, then `git cherry-pick --abort`; rebase the ticket branch instead of merging into it |
+| `[ERROR] Cherry-pick onto staging failed - git's reason is above` | the cherry-pick in `to-staging` or `resolved` failed without a conflict, usually a merge commit in the range | read git's message, then `git cherry-pick --abort`; rebase the ticket branch instead of merging into it |
 | `[ERROR] Could not bring staging up to date with origin/staging` + `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside a stage hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
 | `[ERROR] A cherry-pick on staging stopped on the merge commit …` | an earlier `to-staging` hit a merge commit in the range; what applied before it is staged | `git cherry-pick --abort`; do not commit it, it is half a range. Rebase the ticket instead of merging into it |
 | `[ERROR] A cherry-pick on staging has a resolution staged but not committed` | a conflict was fixed and `git add`-ed but never committed | `gitflow ABC-123 resolved sync -m "…"` when nothing is queued behind it, otherwise `git commit` then `git cherry-pick --continue` first |
-| `[ERROR] -m needs a message: gitflow ABC-123 to-staging -m "message"` | `-m` was given with nothing after it, or only spaces | pass a message, or leave `-m` out and let the stage name the commits it picked |
+| `[ERROR] -m needs a message: gitflow ABC-123 to-staging -m "message"` (or `resolved sync`) | `-m` was given with nothing after it, or only spaces | pass a message, or leave `-m` out - `to-staging` then names the commits it picked, and `resolved sync` only bookmarks a round you committed yourself |
 | `[INFO] It is applying 4108f0e OTHER-999 one, which is not part of ABC-123` | the cherry-pick in flight belongs to another ticket | finish or abort it with git; `resolved sync` would bookmark the wrong ticket |
 | `[INFO] It is applying 4108f0e OTHER-999 one` | `deployable` found a cherry-pick paused, and there is nothing it can do with one whoever it belongs to | finish it or abort it with git, then run `deployable` again |
 | `[ERROR] A revert is in progress on staging` | a `git revert` of several commits is half-finished; its queue outlives `REVERT_HEAD` | `git revert --continue`, or `git revert --abort` |
@@ -85,6 +86,11 @@ those gets its own message naming what is left to do. Only when the resolution
 was the last commit of the range and has been committed does the sequencer state
 git leaves behind get cleared, with `git cherry-pick --quit`, which keeps your
 index.
+
+**During the deprecated `resolved`** you are in the same cherry-pick, and the
+stage prints the same lines for it and ends `BUILD FAILURE` too. Stopping there
+is what `resolved` is for, but nothing has reached staging until one of the two
+forms above is run, so the stage does not report success over it.
 
 **During `deployable`** you are in a rebase. `git status` names the branch being
 rebased, which tells you whether you are in the first rebase (ticket onto

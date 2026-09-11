@@ -36,8 +36,9 @@ Reference
 ---------
 
 What follows is the reference these two stages had in
-[docs/commands.md](commands.md), kept here unchanged, plus the one recovery note
-from [troubleshooting](troubleshooting.md) that applies to them alone. Examples
+[docs/commands.md](commands.md), moved here and kept current with what they
+print, plus the one recovery note from
+[troubleshooting](troubleshooting.md) that applies to them alone. Examples
 use `ABC-123` as the ticket and the default branch names.
 
 `resolved`
@@ -67,14 +68,51 @@ locally. `<range>` is `origin/ABC-123-track-<highest>..ABC-123`, or
 `origin/master..ABC-123` on the first sync — see [tracking
 branches](concepts.md#tracking-branches-abc-123-track-n).
 
-Leaves you on staging with the changes **staged but not committed**. Review them
-(`git status`, `git diff --cached`), then continue with `resolved sync`.
+`sync` is the only word it takes in the option slot, and `-m` belongs to that
+half — the cherry-pick commits nothing, so it has no message to carry. Anything
+else is refused by name:
 
-On conflict: fix the files and `git add` / `git rm` them. If the range held
-nothing after the conflicting commit, `resolved sync -m "…"` finishes the job. If
-commits were still queued behind it, `git cherry-pick --continue` refuses while
-the resolved changes sit staged and uncommitted, which is exactly what `-n` leaves
-you with, so commit first:
+```
+[ERROR] resolved does not take "snyc": gitflow ABC-123 resolved [sync [-m "message"]]
+```
+
+Before 0.0.4 an unrecognised word was a silent no-op: `resolved snyc` and
+`resolved -m "…"` ran nothing at all and reported `BUILD SUCCESS`, which reads
+as a sync that happened.
+
+Leaves you on staging with the changes **staged but not committed**, and prints
+what to do with them:
+
+```
+[INFO] Review what is staged: git status, git diff --cached
+[INFO] Then commit and bookmark it: gitflow ABC-123 resolved sync -m "message"
+[INFO] Or commit it yourself first, and bookmark with: gitflow ABC-123 resolved sync
+```
+
+`resolved sync` **without** `-m` only bookmarks, which is the third line: it is
+the right command once the staged changes have been committed, and the wrong one
+while they are still staged. An empty range — staging already level with the
+ticket — is reported and nothing else happens.
+
+On conflict the stage reports `BUILD FAILURE` and exits 1. Stopping is what it
+is for, and the conflicted pick is left exactly where git left it, but nothing
+has reached staging and the round still needs finishing, so the run does not
+call that a success. It is the same state `to-staging` reports, with the same
+advice:
+
+```
+[ERROR] Cherry-pick onto staging conflicts - nothing was committed
+[INFO] Stopped on 2654521 ABC-123 conflicting edit
+[INFO] Fix the conflicted files and "git add" them, then:
+[INFO]   gitflow ABC-123 resolved sync -m "message"   # commits and bookmarks
+[INFO] Or start over with: git cherry-pick --abort
+```
+
+So: fix the files and `git add` / `git rm` them. If the range held nothing after
+the conflicting commit, `resolved sync -m "…"` finishes the job, which is the
+form above. If commits were still queued behind it the message says how many, and
+`git cherry-pick --continue` refuses while the resolved changes sit staged and
+uncommitted, which is exactly what `-n` leaves you with, so commit first:
 
 ```bash
 git commit && git cherry-pick --continue      # for each further conflict: fix, git add, repeat
@@ -87,6 +125,12 @@ gitflow ABC-123 resolved sync                 # use this when nothing is left st
 and uncommitted. `resolved sync` without a message only bookmarks, which would
 leave that work sitting uncommitted on staging behind a bookmark that claims it is
 already there.
+
+A cherry-pick can also fail without leaving a conflict behind, a merge commit in
+the range being the usual cause, and that is reported as itself — there is
+nothing to resolve, and what applied before it is half a range, so the way out is
+`git cherry-pick --abort` rather than a sync. It reads the same as it does for
+[`to-staging`](commands.md#to-staging).
 
 Re-running `gitflow ABC-123 resolved` is not a way to start over. It refuses
 while any cherry-pick, rebase, merge, revert or `git am` is open, names the one
@@ -143,7 +187,15 @@ yours** — the tool prints `git push staging` as a reminder but does not push.
 
 `-m` is optional. Commit the staged changes yourself (IDE, or
 `git commit -am "…"`) and then run `gitflow ABC-123 resolved sync` with no
-message.
+message. What is not optional is the message when `-m` is there: it is trimmed,
+and one that is empty or nothing but spaces is an error rather than a silent
+fall back to bookmarking, which would leave the staged work uncommitted behind a
+bookmark claiming it is on staging.
+
+```
+[ERROR] -m needs a message: gitflow ABC-123 resolved sync -m "message"
+[INFO] Leave it out to bookmark a round you committed yourself
+```
 
 I ran `resolved sync` before `resolved`
 ---------------------------------------

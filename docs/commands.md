@@ -12,7 +12,8 @@ stripped, so tab-completing a remote branch works. The name has to match
 `STAGE` is one of `in-progress`, `pr`, `to-staging`, `deployable`, `closed` —
 which is also the order a ticket runs them in — plus the deprecated `resolved`.
 `OPTION` is only ever `sync`, for `resolved`. `-m` applies to `to-staging` and to
-`resolved sync`.
+`resolved sync`. The two stages that take one, `to-staging` and `resolved`,
+refuse a word they have no meaning for by name rather than ignoring it.
 
 `self` is a reserved word in the ticket slot: it addresses the tool itself, so it
 can never be a ticket. See [tool commands](#tool-commands).
@@ -331,7 +332,10 @@ run stops with the same list and deletes nothing, and you run it again by hand.
 Deprecated, and moved to [docs/deprecated.md](deprecated.md). They split
 `to-staging` into a cherry-pick that stops for review and a commit-and-bookmark
 step. Both still run, and the conflict advice `to-staging` prints still names
-`resolved sync`, which is what finishes a conflicted sync.
+`resolved sync`, which is what finishes a conflicted sync. `resolved` reports a
+conflicted or failed cherry-pick the way `to-staging` reports its own, with the
+same lines and the same `BUILD FAILURE`; `sync` is the only option it takes, and
+anything else is refused.
 
 Tool commands
 -------------
