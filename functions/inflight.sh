@@ -204,12 +204,23 @@ function print_pick_handback() {
 #
 # An operation that is not a cherry-pick. No stage has anything to offer here -
 # pointing at "resolved sync" would commit somebody else's resolution onto
-# staging - so git carries it to the end, or nothing does.
+# staging - so git carries it to the end, or nothing does. Both ways out are
+# named, the way the cherry-pick paths name theirs: --continue carries it to
+# the end, --abort throws it away. Which of the two is honest advice depends on
+# the state - a --continue refuses while a file is still unmerged, so there the
+# resolution comes first.
 # $1 - operation
 # $2 - stage name
+# $3 - "unresolved" when conflicted files are still waiting to be resolved
 #
 function print_op_handback() {
-	print_msg "Finish it, or abandon it with git $1 --abort, then run $2 again"
+	if [ "$3" == "unresolved" ]; then
+		print_msg "Fix the conflicted files and \"git add\" them, then:"
+	fi
+
+	print_msg "  git $1 --continue                        # finishes it"
+	print_msg "  git $1 --abort                           # or drop it"
+	print_msg "Then run $2 again"
 }
 
 #
@@ -286,7 +297,7 @@ function require_nothing_in_flight() {
 			fi
 		elif [ -n "$OP" ]; then
 			print_err "$A $OP with unresolved conflicts is in progress on $BRANCH"
-			print_op_handback "$OP" "$STAGE"
+			print_op_handback "$OP" "$STAGE" unresolved
 		else
 			print_err "$BRANCH has unresolved conflicts"
 			print_msg "Resolve or discard them, then run $STAGE again"
