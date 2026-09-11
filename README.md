@@ -197,6 +197,23 @@ The skill reads nothing from this clone, so there is no path to fix afterwards �
 but it does describe the stages as they stand, so copy it again after an update
 that changes one.
 
+Checking a change
+-----------------
+
+`test/smoke.sh` runs the whole flow — `in-progress`, `pr`, `to-staging`,
+`deployable`, `closed` — against repositories it builds and throws away, and
+checks the exit status of each stage against what its banner said:
+
+```bash
+./test/smoke.sh                  # the clone it lives in
+./test/smoke.sh /path/to/clone   # some other one
+```
+
+It touches nothing of yours: the project, its origin and a copy of the tool are
+built under a temporary directory with `HOME`, `TMPDIR` and `PATH` pointed into
+it, and the whole lot is removed when the run ends. It exits 0 when every check
+passed and names the ones that did not.
+
 Documentation
 -------------
 

@@ -6,6 +6,12 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* new `test/smoke.sh` runs the five stages against throwaway repositories and
+  checks each one's exit status against the banner it printed, the ticket it
+  left checked out, what reached staging and production, and what `closed`
+  deleted. It was written against the run that reported `BUILD SUCCESS` while
+  failing to set an upstream, so it covers the shape a status assigned rather
+  than raised loses: a stage that fails partway and carries on to the end
 * every checkout goes through one function, `emitgit_checkout`, and a checkout
   that fails now ends the run with git's reason under `[ERROR]`. Each stage acts
   on the branch it has just checked out, and the failures were discarded, so the
