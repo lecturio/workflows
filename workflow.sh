@@ -37,12 +37,36 @@ if [[ ! -f "$STARTUP_SCRIPT" ||
 	`grep -F "$WF_DIR/gitflow-completion.sh" "$STARTUP_SCRIPT"` == "" ]]; then
 	# the path is quoted inside the block too: written bare, a clone directory
 	# with a space in its name left the startup file erroring on every login
-	{
+	#
+	# What bash said when the append failed, and the status with it. A startup
+	# file that is not ours to write - root-owned, read-only, a read-only home -
+	# took the redirection down with it while the line below still reported the
+	# loader added, and reported it again on every later run, because nothing had
+	# been written for the grep above to find.
+	#
+	# The status is read from $? rather than tested with "if !", which bash 3.2
+	# does not invert for a redirection that failed on a brace group.
+	#
+	APPEND_ERR=$({
 		echo
 		echo "if [ -f \"$WF_DIR/gitflow-completion.sh\" ]; then"
 		printf '\t. "%s/gitflow-completion.sh"\n' "$WF_DIR"
 		echo fi
-	} >> "$STARTUP_SCRIPT"
+	} 2>&1 >> "$STARTUP_SCRIPT")
+	if [ $? -gt 0 ]; then
+		WF_STATUS=1
+		print_err "Could not add tab completion to $STARTUP_SCRIPT"
+		if [ -n "$APPEND_ERR" ]; then
+			print_err "$APPEND_ERR"
+		fi
+		print_msg "Until that file names the loader or is yours to write, every run stops here"
+		print_msg "Put these lines in it by hand, or make it writable:"
+		print_msg "  if [ -f \"$WF_DIR/gitflow-completion.sh\" ]; then"
+		print_msg "      . \"$WF_DIR/gitflow-completion.sh\""
+		print_msg "  fi"
+		print_build_msg
+		exit 1
+	fi
 	print_msg "Tab completion added to $STARTUP_SCRIPT - reload it to use it: . $STARTUP_SCRIPT"
 fi
 
@@ -97,15 +121,27 @@ export WF_REPO
 # is about to talk to: a project hosted elsewhere is not helped by an answer
 # from github.com, and `pr` prints a URL and opens no connection at all. ssh
 # closes a successful greeting with 1 - "Hi user! You've successfully
-# authenticated" - so 1 is not a failure here; 255 is ssh's own, and anything
-# else is not ssh answering, which a missing key is not the explanation for.
+# authenticated" - so 0 and 1 are the statuses that pass. 255 is ssh's own
+# refusal, and a key nothing has loaded is its usual reason. Anything else is
+# not ssh answering at all - 127 is no ssh on the machine - and it leaves the
+# key as unchecked as a refusal does, so the run stops on it too, rather than
+# carry the open question as far as the stage's own push, where git reports it
+# as a repository that cannot be read.
 #
 if needs_github_key; then
 	out=$(check_github)
-	if [ $? -eq 255 ]; then
+	SSH_STATUS=$?
+	if [ $SSH_STATUS -eq 255 ]; then
 		WF_STATUS=1
 		print_err "$out"
 		echo "Add your private key ssh-add [path to pk]."
+		print_build_msg
+		exit 1
+	elif [ $SSH_STATUS -gt 1 ]; then
+		WF_STATUS=1
+		print_err "$out"
+		print_err "ssh exited $SSH_STATUS, so whether github.com takes your key is unknown"
+		print_msg "127 is ssh missing from this machine; fix ssh, then run the stage again"
 		print_build_msg
 		exit 1
 	fi

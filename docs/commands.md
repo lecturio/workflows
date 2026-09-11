@@ -20,7 +20,8 @@ can never be a ticket. See [tool commands](#tool-commands).
 Every run does the same preflight before the stage: fetches this tool's own clone
 and stops if it is behind its remote, requires the current directory to be inside
 a git clone, reads that repo's `origin` URL, checks `ssh -T git@github.com` for a
-loaded key when that URL is an ssh one on github.com and the stage is not `pr`,
+loaded key when that URL is an ssh one on github.com and the stage is not `pr` -
+stopping both when ssh refuses and when ssh cannot be run at all -
 loads `.gitflow` if present, then runs `git fetch` and `git remote prune origin`
 in the project and stops if that fetch fails, rather than work from refs it could
 not update. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1

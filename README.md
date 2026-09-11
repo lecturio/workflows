@@ -54,7 +54,10 @@ Requirements
 * an SSH key loaded in your agent when the project's `origin` is an ssh URL on
   github.com: every stage but `pr` checks it with
   `ssh -o BatchMode=yes -T git@github.com` before it starts, and that check never
-  prompts
+  prompts. A greeting answers 0 or 1 and passes; a refusal answers 255 and asks
+  for the key; any other status is not `ssh` reporting on the key at all - 127 is
+  `ssh` missing - and stops the run just the same, rather than leave it to fail
+  at the push
 * a clone of the project, with the production branch checked out
 * rights to write into `/usr/local/bin` for the install step, which on a default
   macOS or Linux box means root; the installer runs `sudo` for you
@@ -77,7 +80,8 @@ your `PATH` would leave it unable to find `functions/`.
 
 The first `gitflow` run also appends a completion loader to `~/.profile`
 (`~/.bashrc` on Linux) and says so; reload that file, or open a new shell, to
-pick it up. See [shell completion](docs/troubleshooting.md#shell-completion).
+pick it up. A startup file the run cannot write stops it, with the lines to add
+by hand. See [shell completion](docs/troubleshooting.md#shell-completion).
 
 Every run compares this clone with its own remote and stops if the two differ in
 either direction, so keep it up to date and free of local commits:

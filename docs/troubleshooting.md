@@ -6,8 +6,10 @@ Error messages
 
 | Message | Cause | Fix |
 | --- | --- | --- |
+| `[ERROR] Could not add tab completion to ~/.profile` | the completion loader is not in that file and the run could not append it - the file is root-owned, read-only, or the home directory is. bash's own reason follows on the next `[ERROR]` line. Every run stops here until it is settled, because nothing was written for the next run's check to find | make the file writable, or paste the three lines the run prints into it yourself |
 | `[ERROR] Update workflows to the latest version` | the tool's own clone differs from its remote: behind it, or carrying unpushed local commits of your own | `gitflow self update`, then push or move aside any local commits it reports |
 | `Add your private key ssh-add [path to pk].`, under `[ERROR]` lines quoting ssh | the key check before the stage failed. It runs for every stage but `pr`, and only when `origin` is an ssh URL on github.com; it never prompts, so a host key you have not seen before fails it too | load your key, e.g. `ssh-add ~/.ssh/id_ed25519`, and check you can reach github.com |
+| `[ERROR] ssh exited 127, so whether github.com takes your key is unknown` | the key check ran `ssh` and got a status that is not ssh reporting on the key: 127 is no `ssh` on the machine, and other statuses come from a broken `ssh` invocation. 0 and 1 pass, 255 is a refusal and gets the key message above | install or repair `ssh`, then re-run; check `ssh -o BatchMode=yes -T git@github.com` by hand |
 | `[ERROR] gitflow must be run inside a project clone` | the current directory is not inside a git repository | `cd` into the project you want to act on |
 | `[ERROR] Could not read origin URL from the current repository` | the project has no `origin` remote | `git remote add origin …` |
 | `[ERROR] fatal: Could not read from remote repository.`, or another `git fetch` error | the stage's own `git fetch` failed - offline, or origin unreachable - and it stops rather than work from refs it could not update | get back on the network, or fix the remote, then re-run |
@@ -146,7 +148,10 @@ Shell completion
 ----------------
 
 The first `gitflow` run appends a loader for `gitflow-completion.sh` to
-`~/.profile`, or to `~/.bashrc` on Linux, and says so. Nothing is loaded into the
+`~/.profile`, or to `~/.bashrc` on Linux, and says so. A run that cannot write
+that file stops there with `BUILD FAILURE` and prints the lines to add by hand:
+it has nothing to show for the append, and saying the loader was added would be
+untrue on that run and on every run after it. Nothing is loaded into the
 shell you typed in — a run cannot change the environment of the shell that
 started it — so reload that file with `. ~/.bashrc` or `. ~/.profile`, or open a
 new shell, and then:

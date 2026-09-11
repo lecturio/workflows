@@ -45,14 +45,25 @@ Current version: 0.0.4.SNAPSHOT
   run, so a profile ending in `cd "$HOME"`, which is a common one, moved the run
   out of the project clone: the first `gitflow` in a repository reported
   `gitflow must be run inside a project clone`, and only the first, which read
-  as random. The run says the loader was added and leaves reloading to you
+  as random. The run says the loader was added and leaves reloading to you, and
+  it says it only when the append went through. A startup file that is not yours
+  to write - root-owned, read-only, or sitting in a read-only home - took the
+  redirection down with it while the run reported the loader added anyway, and
+  reported it again on every run after, because nothing had been written for the
+  next run's check to find. That now ends the run with bash's own reason and the
+  lines to put in the file by hand
 * a tool clone whose directory name contains a space works. `$WF_DIR` was
   expanded bare, so `functions/` was never sourced and the run ended on
   `check_github: command not found` diagnosed as a missing ssh key - 127 passed
   a test that excluded only 1 - and the loader written into the startup file was
   broken from then on, erroring on every login shell. The paths are quoted, in
-  the block written into the startup file as well, and the ssh check now tests
-  for ssh's own failure status
+  the block written into the startup file as well, and the ssh check now reads
+  the whole of ssh's status rather than one value of it: a greeting answers 0 or
+  1 and passes, a refusal answers 255 and is told to load a key, and anything
+  else is not ssh reporting on the key at all and stops the run. 127 - no `ssh`
+  on the machine - was the case that went through, leaving the stage to fail at
+  its own push with git's `Could not read from remote repository` standing in
+  for a reason
 * the command log is a file of the run's own under `$TMPDIR` instead of
   `output.log` in the tool's own directory. That directory is not the tool's to
   write in - a clone kept somewhere root-owned, which "clone somewhere
