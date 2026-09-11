@@ -96,7 +96,12 @@ Current version: 0.0.4.SNAPSHOT
   `echo` collapsed a multi-line failure onto one
 * the installer removes the old symlink with `rm -f` rather than `rm -rf`, which
   would have taken a directory somebody had left at `/usr/local/bin/gitflow`
-  with it, and quotes the path it links to
+  with it, and quotes the path it links to. It reads that removal now: `rm -f`
+  refuses a directory, and the `ln -s` behind it then succeeded by putting the
+  link inside it - `/usr/local/bin/gitflow/workflow.sh`, nothing on `PATH`,
+  `gitflow` answering `permission denied`, and an installer that had printed
+  nothing and exited 0. A path that cannot be replaced stops the install with
+  the reason, and nothing is linked
 * `closed` deletes through git's argument list instead of a command string that
   `emit` re-parses. Git allows `;`, `$( )` and backticks in a ref name, so a
   branch pushed to origin as `ABC-123;id` ran `id` on the machine of whoever

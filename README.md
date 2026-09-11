@@ -76,7 +76,10 @@ move the clone afterwards. All three of the installer's commands are prefixed wi
 `sudo`, so it asks for your password even on machines where you own
 `/usr/local/bin` already. That path is not a free choice either: `workflow.sh`
 locates its own directory by reading this specific symlink, so a link elsewhere on
-your `PATH` would leave it unable to find `functions/`.
+your `PATH` would leave it unable to find `functions/`. Whatever is at that path
+already is removed first, and the installer stops if it cannot be - a directory
+somebody left there is the usual case - rather than link inside it and report
+nothing.
 
 The first `gitflow` run also appends a completion loader to `~/.profile`
 (`~/.bashrc` on Linux) and says so; reload that file, or open a new shell, to
