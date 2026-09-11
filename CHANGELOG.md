@@ -178,6 +178,34 @@ Current version: 0.0.4.SNAPSHOT
   never folds anything unreviewed into staging and never discards someone's
   work in progress. It names the operation it found, and only offers
   `resolved sync` for a cherry-pick, which is the only one that can finish
+* `resolved` and `deployable` refuse while a git operation is open instead of
+  clearing it out of the way. `resolved` began with `git cherry-pick --abort`
+  and `deployable` with `git rebase --abort`, both quiet and both before
+  anything had been looked at, so a conflict resolved by hand and `git add`-ed
+  went back to what staging held before the pick, with nothing printed to say
+  so and `BUILD SUCCESS` at the end of the run; a cherry-pick or an interactive
+  rebase you had started yourself, on whatever branch you happened to be on,
+  went the same way. Each stage names the operation and the branch it is on now,
+  prints how to finish it and how to abandon it, and ends `BUILD FAILURE`
+  having changed nothing. The advice matches what the stage can offer: a
+  cherry-pick working through this ticket's own range is a hand-resolved sync,
+  which `resolved sync` finishes, so `resolved` says that and nothing else does;
+  `deployable` can carry nothing into its two rebases, so it hands every
+  operation back to git with that operation's own `--continue` and `--abort`
+* the state a cherry-pick leaves behind once its last commit has been committed
+  by hand is named rather than picked over. Nothing is queued, so there is no
+  work in it, but git counts the pick as in progress and refuses the next one.
+  `resolved` used to abort it - and the commit by hand had moved HEAD, so the
+  abort refused to rewind and the stage picked the same range again on top of
+  the commit that already carried it, leaving a fresh conflict on staging under
+  `BUILD SUCCESS`. Both stages name `git cherry-pick --quit`, which keeps the
+  index, and the bookmark the round may still be waiting for; `to-staging`
+  clears its own as before, since it made that pick and is about to make the
+  next one
+* what counts as an operation in flight lives in one place, `functions/inflight.sh`,
+  for the three stages that apply commits, rather than inside `to-staging`.
+  Nothing about `to-staging` changed: the same messages, in the same order, for
+  the same states
 * a cherry-pick that fails without a conflict, a merge commit in the range being
   the usual reason, is reported as itself instead of as a conflict to resolve,
   and is told apart from a resolution waiting to be committed by whether the

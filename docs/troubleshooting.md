@@ -21,18 +21,20 @@ Error messages
 | `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | `to-staging` and `resolved` weigh the ticket branch against origin's copy, and one of the two is not there - usually a typo'd ticket, or a branch that never left this machine | check the name with `git branch -a`; run `in-progress` for a ticket that has not started, or `git push` one that only exists locally |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `to-staging` and `resolved` need the ticket branch fully pushed | `git push` on the ticket branch, then re-run |
 | `[ERROR] Commit or stash your local changes before to-staging` | the worktree has modified tracked files, and `to-staging` commits without stopping for review | commit them or stash them; untracked files never block it |
-| `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
+| `[ERROR] A cherry-pick with unresolved conflicts is in progress on staging` | an earlier sync conflicted and the conflict is still unresolved. `to-staging`, `resolved` and `deployable` all refuse while it is | finish it (see [conflicts](#conflicts)) or drop it with `git cherry-pick --abort` |
 | `[ERROR] Cherry-pick onto staging conflicts - nothing was committed` | `to-staging` could not apply the range cleanly | resolve it as the message says, or `git cherry-pick --abort` |
 | `[ERROR] to-staging takes no option other than -m: gitflow ABC-123 to-staging [-m "message"]` | a word other than the `-m` forms followed the stage | drop it; `sync` belongs to `resolved`, not to this stage, and no other flag is accepted |
 | `[ERROR] A cherry-pick on staging still has 1 commit(s) to apply` | a conflict was resolved and committed, but the rest of the range was never applied | `git cherry-pick --continue`, then `gitflow ABC-123 resolved sync -m "…"`; or `git cherry-pick --abort` to give up on the rest |
 | `[ERROR] A cherry-pick is paused on staging with its conflicts already resolved` | a cherry-pick you started by hand is waiting for `--continue` | finish it with `git cherry-pick --continue`, or drop it with `git cherry-pick --abort` |
-| `[ERROR] A rebase with unresolved conflicts is in progress on …` (or `merge`, `revert`) | another git operation is half-finished; `to-staging` will not commit over it | finish it, or `git rebase --abort` / `git merge --abort` / `git revert --abort` |
+| `[ERROR] A cherry-pick on staging has nothing left to apply and was never cleared` | the last commit of a conflicted sync was committed by hand, so nothing is queued, but git still counts the pick as in progress and refuses the next one | bookmark the round with `gitflow ABC-123 resolved sync` if that has not been done, then `git cherry-pick --quit`, which keeps your index. `to-staging` clears this one itself |
+| `[ERROR] A rebase with unresolved conflicts is in progress on …` (or `merge`, `revert`, `An am`) | another git operation is half-finished, and no stage runs over one: `to-staging`, `resolved` and `deployable` each stop and name it | finish it, or `git rebase --abort` / `git merge --abort` / `git revert --abort` / `git am --abort`; then re-run the stage |
 | `[ERROR] Cherry-pick onto staging failed - git's reason is above` | the cherry-pick failed without a conflict, usually a merge commit in the range | read git's message, then `git cherry-pick --abort`; rebase the ticket branch instead of merging into it |
 | `[ERROR] Could not bring staging up to date with origin/staging` + `[INFO] Resolve conflicts manually` | a `git pull --rebase` inside a stage hit a conflict | resolve, `git rebase --continue`, then re-run the stage |
 | `[ERROR] A cherry-pick on staging stopped on the merge commit …` | an earlier `to-staging` hit a merge commit in the range; what applied before it is staged | `git cherry-pick --abort`; do not commit it, it is half a range. Rebase the ticket instead of merging into it |
 | `[ERROR] A cherry-pick on staging has a resolution staged but not committed` | a conflict was fixed and `git add`-ed but never committed | `gitflow ABC-123 resolved sync -m "…"` when nothing is queued behind it, otherwise `git commit` then `git cherry-pick --continue` first |
 | `[ERROR] -m needs a message: gitflow ABC-123 to-staging -m "message"` | `-m` was given with nothing after it, or only spaces | pass a message, or leave `-m` out and let the stage name the commits it picked |
 | `[INFO] It is applying 4108f0e OTHER-999 one, which is not part of ABC-123` | the cherry-pick in flight belongs to another ticket | finish or abort it with git; `resolved sync` would bookmark the wrong ticket |
+| `[INFO] It is applying 4108f0e OTHER-999 one` | `deployable` found a cherry-pick paused, and there is nothing it can do with one whoever it belongs to | finish it or abort it with git, then run `deployable` again |
 | `[ERROR] A revert is in progress on staging` | a `git revert` of several commits is half-finished; its queue outlives `REVERT_HEAD` | `git revert --continue`, or `git revert --abort` |
 | `[ERROR] remote: rejecting refs/heads/ABC-123-track-N` | the remote refused the bookmark push, e.g. a protected-ref rule | the local bookmark stays behind and the next sync numbers past it, so fix the rule and re-run; delete the stray with `git branch -D ABC-123-track-N` if you want the numbers tidy |
 | `[ERROR] WF_REPO must point at github.com (ssh or https)` | `pr` can only build GitHub compare URLs | use a GitHub `origin`, or open the PR by hand |
@@ -89,12 +91,15 @@ rebased, which tells you whether you are in the first rebase (ticket onto
 production, where conflicts nearly always are) or the second. Fix, `git add` /
 `git rm`, `git rebase --continue`, then run `gitflow ABC-123 deployable` again.
 
-`resolved` and `deployable` can be restarted from scratch by simply re-running
-them: `resolved` aborts a pending cherry-pick first, `deployable` a pending
-rebase. Both therefore discard whatever you had half-resolved, so use `git log`
-and `git status` to see where you stand before you re-run. `to-staging` is the
-exception — it refuses instead, and abandoning its cherry-pick is something you
-ask for yourself with `git cherry-pick --abort`.
+No stage clears an operation it did not start. `to-staging`, `resolved` and
+`deployable` all refuse while a cherry-pick, a rebase, a merge, a revert or a
+`git am` is open: each names the operation and the branch it is on, prints how to
+finish it and how to abandon it, and ends with `BUILD FAILURE` having changed
+nothing. Re-running a stage is therefore never a way to start over. Before
+0.0.4 `resolved` began with `git cherry-pick --abort` and `deployable` with
+`git rebase --abort`, both quiet and both before anything had been looked at, so
+re-running either of them was how a resolution made by hand disappeared without
+a word. Abandoning one is yours to ask for, and yours to type.
 
 The ticket branch looks diverged during a sync
 ----------------------------------------------

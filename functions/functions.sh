@@ -4,6 +4,7 @@
 source "$WF_DIR/functions/connectivity.sh"
 source "$WF_DIR/functions/execution.sh"
 source "$WF_DIR/functions/branches.sh"
+source "$WF_DIR/functions/inflight.sh"
 
 COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
 
