@@ -83,10 +83,6 @@ function gitrun_failonerror() {
 	fi
 }
 
-function emitgit_abort_rebase() {
-	emit "git rebase --abort"
-}
-
 function emitgit_sync_branch() {
 	emit "git pull --rebase origin $1" "$2"
 }

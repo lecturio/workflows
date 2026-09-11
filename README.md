@@ -172,8 +172,12 @@ WF_PROD_BRANCH=main
 WF_STAGING_BRANCH=devel
 ```
 
-Either key may be left out. Keys in the file win over the environment; keys that
-are absent fall back to the environment, then to the defaults above.
+Either key may be left out, spaces around the `=` are fine, and the value may be
+quoted or bare. Keys in the file win over the environment; keys that are absent
+fall back to the environment, then to the defaults above. A line that is not
+`KEY=value`, a `#` comment or blank stops the run and is named, rather than being
+skipped with `master` and `staging` used behind it, and so does a file that is
+there and cannot be read.
 
 Using it from an agent
 ----------------------

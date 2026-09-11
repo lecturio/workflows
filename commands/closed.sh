@@ -99,6 +99,16 @@ REMOTE_BRANCHES=("${WF_DELETE[@]}")
 __collect_ticket_branches
 LOCAL_BRANCHES=("${WF_DELETE[@]}")
 
+# A ticket nobody has a branch for is a typo often enough to be worth saying so:
+# the stage used to match nothing, delete nothing, and report BUILD SUCCESS,
+# which reads as the branches having been there and gone.
+if [ ${#REMOTE_BRANCHES[@]} -eq 0 ] && [ ${#LOCAL_BRANCHES[@]} -eq 0 ]; then
+	WF_STATUS=1
+	print_err "No branch here or on origin matches $WF_TASK - nothing to delete"
+	print_build_msg
+	exit 1
+fi
+
 UNMERGED=""
 for BRANCH in "${LOCAL_BRANCHES[@]}"; do
 	if [ "`__unmerged_commits "$BRANCH"`" -gt 0 ]; then

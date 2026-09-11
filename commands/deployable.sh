@@ -29,6 +29,8 @@ __merge_branch() {
 	emit_failonerror "git rebase -Xignore-all-space $2"
 }
 
+require_ticket_branch deployable
+
 refresh_origin
 require_origin_branch "$WF_PROD_BRANCH"
 __setup_branch "$WF_PROD_BRANCH"
@@ -40,3 +42,12 @@ if [ "$PENDING_COMMITS" == "" ]; then
 fi
 
 __merge_branch "$WF_TASK" "$WF_PROD_BRANCH" && __merge_branch "$WF_PROD_BRANCH" "$WF_TASK"
+
+# Production is yours to push, so the stage says so rather than ending on git's
+# "Successfully rebased and updated refs/heads/master", which says a rebase
+# happened and nothing about what is left to do. Named the way to-staging names
+# the staging push, and left out when the rebase moved production nowhere.
+if [[ $WF_STATUS -eq 0 &&
+	-n "`git log --oneline origin/$WF_PROD_BRANCH..$WF_PROD_BRANCH`" ]]; then
+	print_msg "Now push it: git push origin $WF_PROD_BRANCH"
+fi

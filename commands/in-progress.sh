@@ -21,7 +21,11 @@ if [ $EXISTS_LOCALLY -eq 0 ]; then
 	emitgit_checkout "$WF_TASK"
 	__report_checkout
 else
-	if [ $EXISTS_REMOTELY ]; then
+	# The listing as a string, not as the arguments of the test: unquoted it was
+	# word-split, and "gitflow HEAD in-progress" - where git answers
+	# "origin/HEAD -> origin/master" - printed
+	# "[: ->: binary operator expected" before the stage carried on
+	if [ -n "$EXISTS_REMOTELY" ]; then
 		emitgit_checkout "-b $WF_TASK origin/$WF_TASK"
 		__report_checkout
 	else

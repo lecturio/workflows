@@ -100,8 +100,9 @@ What the tool leaves to you
 ---------------------------
 
 * **It never pushes staging or production.** `to-staging`, `resolved sync` and
-  `deployable` all stop with the commits in your local branch and print a
-  reminder. Pushing is a deliberate manual step.
+  `deployable` all stop with the commits in your local branch and print the push
+  as their last line — `Now push it: git push origin staging`, and
+  `git push origin master` from `deployable`. Pushing is a deliberate manual step.
 * **It doesn't rebase your ticket branch onto production while you work.** To pick
   up production changes mid-ticket, run `git pull --rebase origin master` on the
   ticket branch yourself. `deployable` is the only stage that rebases onto

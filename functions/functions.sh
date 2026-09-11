@@ -48,6 +48,7 @@ function validate_input_params() {
 #TODO format properly multi-lines output
 function print_msg() {
 	if [ "$2" == "line" ]; then
+		local width i
 
 		if [ -t 0 ]; then
 			let "width=$(stty size | cut -d ' ' -f 2) - 7"
@@ -55,7 +56,11 @@ function print_msg() {
 			let "width=${COLUMNS:-80} - 7"
 		fi
 		echo -n "[INFO] "
-		for i in $(seq $width) 
+		# counted rather than seq'd: the "[INFO] " prefix is seven columns, so a
+		# terminal narrower than eight leaves nothing to draw, and BSD seq counts
+		# downwards when its argument is below one - "seq 0" gives 1 0 and a
+		# one-column terminal got an eight-dash rule out of "seq -6"
+		for (( i = 0; i < width; i++ ))
 		do
    			echo -n $1
 		done
@@ -82,7 +87,9 @@ function print_err() {
 
 #
 # Reject names that would break unquoted eval in emit() or be parsed as git options.
-# Must start with a letter or digit (no leading - or +). - is first in the class so it is literal.
+# Must start with a letter or digit, so nothing can be read as an option, and the
+# rest is - . _ / and letters and digits: + is rejected wherever it appears, not
+# only in front. - is first in the class so it is literal.
 # $1 - branch name
 # $2 - label for the error (e.g. WF_TASK, WF_PROD_BRANCH)
 #
@@ -150,15 +157,38 @@ function load_gitflow() {
 		return 0
 	fi
 
+	# A file that is there and cannot be opened is not the same as no file at
+	# all. The redirection below fails, the loop never runs, and the run went on
+	# with master and staging while the file asked for other names: on a project
+	# that still had the old pair beside the new one, `in-progress` cut the
+	# ticket from the abandoned `master` and reported BUILD SUCCESS, with bash's
+	# own `Permission denied` on stderr the only thing that had said anything.
+	if [ ! -r "$GITFLOW_FILE" ]; then
+		WF_STATUS=1
+		print_err "Cannot read $GITFLOW_FILE"
+		print_msg "It names the branches the run works on; make it readable, or remove it to fall back to the environment and the defaults"
+		print_build_msg
+		exit 1
+	fi
+
 	local line key value
 	while IFS= read -r line || [ -n "$line" ]; do
 		line="${line%$'\r'}"
 		[[ "$line" =~ ^[[:space:]]*$ ]] && continue
 		[[ "$line" =~ ^[[:space:]]*# ]] && continue
 
-		if [[ ! "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-			print_msg "Ignoring invalid line in .gitflow: $line"
-			continue
+		# Spaces around the "=" are allowed: KEY = "value" is how anybody would
+		# write it, and it used to be dropped. A line that still cannot be read
+		# stops the run rather than being skipped with a fallback behind it -
+		# these two keys decide which shared branch the work goes to, and a run
+		# that guesses master and staging while the file asks for something else
+		# puts a ticket on the wrong one and reports success for it.
+		if [[ ! "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*)$ ]]; then
+			WF_STATUS=1
+			print_err "Cannot read $GITFLOW_FILE: $line"
+			print_msg "A line is KEY=value, a # comment, or blank"
+			print_build_msg
+			exit 1
 		fi
 
 		key="${BASH_REMATCH[1]}"
@@ -197,11 +227,15 @@ function refresh_origin() {
 
 #
 # Fail when a configured branch is missing on origin.
+#
+# Only ever called with WF_PROD_BRANCH or WF_STAGING_BRANCH, which workflow.sh
+# has already put through require_safe_branch_name, so it does not validate them
+# a second time.
+#
 # $1 - branch name
 #
 function require_origin_branch() {
 	local branch="$1"
-	require_safe_branch_name "$branch" "origin branch"
 	emit "git rev-parse --verify --quiet origin/$branch" quiet
 	if [ $? -ne 0 ]; then
 		WF_STATUS=1
