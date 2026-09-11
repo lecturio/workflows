@@ -246,6 +246,17 @@ Current version: 0.0.4.SNAPSHOT
   which `resolved sync` finishes, so `resolved` says that and nothing else does;
   `deployable` can carry nothing into its two rebases, so it hands every
   operation back to git with that operation's own `--continue` and `--abort`
+* a rebase, a merge, a revert or a `git am` in flight is handed back with both
+  of its routes named, rather than only the way out of it. One line covered all
+  four - `Finish it, or abandon it with git <op> --abort` - which named the
+  abandoning and left the finishing to be guessed, while the cherry-pick paths
+  beside it spelled out both. It is two messages now, because the honest advice
+  differs by state: with conflicts still unresolved it says to fix the files and
+  `git add` them first, since a bare `--continue` refuses while any file is
+  unmerged, and with them resolved and the operation still open it prints
+  `git <op> --continue` on its own. `git <op> --abort` is under it either way,
+  and both end with the line to run the stage again. `to-staging`, `resolved`
+  and `deployable` all print the new wording
 * the state a cherry-pick leaves behind once its last commit has been committed
   by hand is named rather than picked over. Nothing is queued, so there is no
   work in it, but git counts the pick as in progress and refuses the next one.

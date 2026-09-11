@@ -91,7 +91,7 @@ of them back to git with `--continue` and `--abort`.
 | `A cherry-pick on staging still has N commit(s) to apply` | a conflict was committed by hand, the rest of the range never applied | `git cherry-pick --continue`, then `resolved sync -m "…"` (or with no `-m` when nothing is left staged) |
 | `A cherry-pick is paused on staging with its conflicts already resolved` | somebody's pick by hand, waiting for `--continue`. The stage's own picks never reach this state | leave it to them: `git cherry-pick --continue`, or `--abort`. Tell the user rather than deciding |
 | `A cherry-pick on staging stopped on the merge commit …` | see [a merge commit in the range](#a-merge-commit-in-the-range) | `git cherry-pick --abort` — what applied is half a range |
-| `A rebase / merge / revert / An am … is in progress on …` | another git operation is half-finished, and no stage can advise on it | finish it, or abandon it with `git <op> --abort`, then re-run the stage. Never "commit or stash" your way out of a rebase |
+| `A rebase / merge / revert / An am … is in progress on …` | another git operation is half-finished, and no stage can advise on it | follow the two lines it prints: `git <op> --continue` finishes it, `git <op> --abort` drops it, then re-run the stage. With conflicts still open it says to fix the files and `git add` them first, because `--continue` refuses until they are. Never "commit or stash" your way out of a rebase |
 | `A cherry-pick on staging has nothing left to apply and was never cleared` | a conflicted round was committed by hand; git counts the pick as in progress and refuses the next one | bookmark the round with `resolved sync` if that has not happened, then `git cherry-pick --quit`, which keeps the index. `to-staging` clears this state itself and never prints this |
 | `It is applying 4108f0e OTHER-999 one, which is not part of ABC-123` | the cherry-pick in flight belongs to another ticket | hand it back to git as the message says. **Do not run `resolved sync`** — it would commit their work onto staging and bookmark this ticket as synced when none of its commits went in, and the next sync would skip them for good |
 
@@ -133,7 +133,10 @@ is open, whether it is its own or one the user started:
 
 ```
 [ERROR] A rebase with unresolved conflicts is in progress on a detached HEAD
-[INFO] Finish it, or abandon it with git rebase --abort, then run deployable again
+[INFO] Fix the conflicted files and "git add" them, then:
+[INFO]   git rebase --continue                        # finishes it
+[INFO]   git rebase --abort                           # or drop it
+[INFO] Then run deployable again
 ```
 
 Finishing it is the answer. `git rebase --abort` throws away everything resolved

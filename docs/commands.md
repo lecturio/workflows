@@ -289,7 +289,20 @@ having changed nothing:
 
 ```
 [ERROR] A rebase with unresolved conflicts is in progress on a detached HEAD
-[INFO] Finish it, or abandon it with git rebase --abort, then run deployable again
+[INFO] Fix the conflicted files and "git add" them, then:
+[INFO]   git rebase --continue                        # finishes it
+[INFO]   git rebase --abort                           # or drop it
+[INFO] Then run deployable again
+```
+
+With the conflicts resolved and the operation still open, the same refusal drops
+the line about the files, because there is nothing left to add:
+
+```
+[ERROR] A rebase is in progress on a detached HEAD
+[INFO]   git rebase --continue                        # finishes it
+[INFO]   git rebase --abort                           # or drop it
+[INFO] Then run deployable again
 ```
 
 Before 0.0.4 it began with `git rebase --abort`, quiet and unconditional, so a
