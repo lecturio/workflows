@@ -18,12 +18,16 @@ which is also the order a ticket runs them in — plus the deprecated `resolved`
 can never be a ticket. See [tool commands](#tool-commands).
 
 Every run does the same preflight before the stage: fetches this tool's own clone
-and stops if it is behind its remote, checks `ssh -T git@github.com`, requires the
-current directory to be inside a git clone, reads that repo's `origin` URL, loads
-`.gitflow` if present, then runs `git fetch` and `git remote prune origin` in the
-project. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1
+and stops if it is behind its remote, requires the current directory to be inside
+a git clone, reads that repo's `origin` URL, checks `ssh -T git@github.com` for a
+loaded key when that URL is an ssh one on github.com and the stage is not `pr` -
+stopping both when ssh refuses and when ssh cannot be run at all -
+loads `.gitflow` if present, then runs `git fetch` and `git remote prune origin`
+in the project and stops if that fetch fails, rather than work from refs it could
+not update. It finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1
 to match, so a run can be read by a script, a CI step or an `&&` chain. Output of
-the noisier commands is written to `output.log` in the tool's own directory.
+the noisier commands is written to a log of the run's own under `$TMPDIR`, or
+under `/tmp` when that is unset.
 
 Every stage works on a branch it checks out first, and acts on whatever is
 checked out afterwards, so a checkout that fails ends the run then and there with

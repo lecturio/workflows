@@ -1,9 +1,9 @@
 #!/bin/bash
 # Function namespace
 
-source $WF_DIR/functions/connectivity.sh
-source $WF_DIR/functions/execution.sh
-source $WF_DIR/functions/branches.sh
+source "$WF_DIR/functions/connectivity.sh"
+source "$WF_DIR/functions/execution.sh"
+source "$WF_DIR/functions/branches.sh"
 
 COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
 
@@ -183,8 +183,14 @@ function load_gitflow() {
 #
 # Update origin and drop stale remote-tracking branches.
 #
+# A fetch that fails ends the run with git's reason. Discarded, it left every
+# stage working from whatever was last fetched: offline, `closed` weighed a
+# ticket against a stale origin/master and asked to delete commits that had
+# been on it for days, and neither the listing nor the run said the refs were
+# old. The prune stays quiet - it only tidies what the fetch brought.
+#
 function refresh_origin() {
-	emit "git fetch" quiet
+	emit_failonerror "git fetch" print_msg
 	emit "git remote prune origin" quiet
 }
 

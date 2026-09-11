@@ -51,7 +51,13 @@ Requirements
 ------------
 
 * bash and git, on macOS or Linux
-* an SSH key loaded in your agent: every run starts with `ssh -T git@github.com`
+* an SSH key loaded in your agent when the project's `origin` is an ssh URL on
+  github.com: every stage but `pr` checks it with
+  `ssh -o BatchMode=yes -T git@github.com` before it starts, and that check never
+  prompts. A greeting answers 0 or 1 and passes; a refusal answers 255 and asks
+  for the key; any other status is not `ssh` reporting on the key at all - 127 is
+  `ssh` missing - and stops the run just the same, rather than leave it to fail
+  at the push
 * a clone of the project, with the production branch checked out
 * rights to write into `/usr/local/bin` for the install step, which on a default
   macOS or Linux box means root; the installer runs `sudo` for you
@@ -70,11 +76,15 @@ move the clone afterwards. All three of the installer's commands are prefixed wi
 `sudo`, so it asks for your password even on machines where you own
 `/usr/local/bin` already. That path is not a free choice either: `workflow.sh`
 locates its own directory by reading this specific symlink, so a link elsewhere on
-your `PATH` would leave it unable to find `functions/`.
+your `PATH` would leave it unable to find `functions/`. Whatever is at that path
+already is removed first, and the installer stops if it cannot be - a directory
+somebody left there is the usual case - rather than link inside it and report
+nothing.
 
 The first `gitflow` run also appends a completion loader to `~/.profile`
-(`~/.bashrc` on Linux); see
-[shell completion](docs/troubleshooting.md#shell-completion).
+(`~/.bashrc` on Linux) and says so; reload that file, or open a new shell, to
+pick it up. A startup file the run cannot write stops it, with the lines to add
+by hand. See [shell completion](docs/troubleshooting.md#shell-completion).
 
 Every run compares this clone with its own remote and stops if the two differ in
 either direction, so keep it up to date and free of local commits:
