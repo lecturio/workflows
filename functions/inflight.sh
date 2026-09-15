@@ -115,7 +115,7 @@ function queue_belongs_to_ticket() {
 		return
 	fi
 
-	local EXPECTED=`git rev-list "$(cherry_pick_range)" 2>/dev/null | sort -u`
+	local EXPECTED=`commits_to_pick 2>/dev/null | sort -u`
 	if [ -z "$EXPECTED" ]; then
 		return
 	fi

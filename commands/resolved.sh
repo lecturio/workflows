@@ -87,20 +87,21 @@ function require_known_option() {
 #
 function sync_feature_changes() {
 	local CHERRY_PICK="$(cherry_pick_range)"
+	local PICK_LIST="`trim_whitespace "$(commits_to_pick | tr '\n' ' ')"`"
 	local PICK_STATUS
 
 	emitgit_checkout "$WF_STAGING_BRANCH"
 
-	# An empty range is not a failure, and git makes one: "error: empty commit
-	# set passed", which as a pick error would send you to a "git cherry-pick
-	# --abort" with no cherry-pick to abort.
-	if [ -z "`git log --format=%h -1 "$CHERRY_PICK"`" ]; then
+	# Nothing to pick is not a failure, and git makes one of it: "error: empty
+	# commit set passed", which as a pick error would send you to a
+	# "git cherry-pick --abort" with no cherry-pick to abort.
+	if [ -z "$PICK_LIST" ]; then
 		print_msg "$WF_STAGING_BRANCH is already level with $WF_TASK - nothing to cherry-pick"
 		print_build_msg
 		exit 0
 	fi
 
-	emit "git cherry-pick -Xignore-all-space -n ${CHERRY_PICK}"
+	emit "git cherry-pick -Xignore-all-space -n ${PICK_LIST}"
 	PICK_STATUS=$?
 
 	if [ -n "`git ls-files -u`" ]; then
@@ -136,5 +137,6 @@ if [ "$WF_ENV" == "" ]; then
 	require_origin_branch "$WF_PROD_BRANCH"
 	require_origin_branch "$WF_STAGING_BRANCH"
 	setup_branch "$WF_PROD_BRANCH" && setup_branch "$WF_TASK" && setup_branch "$WF_STAGING_BRANCH"
+	require_bookmark_on_branch
 	sync_feature_changes
 fi

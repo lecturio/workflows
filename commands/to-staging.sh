@@ -95,7 +95,7 @@ function write_commit_message() {
 		printf '%s %s\n' "$WF_TASK" "$SHA_LINE" > "$MSG_FILE"
 	else
 		printf '%s\n\n' "$MESSAGE" > "$MSG_FILE"
-		git log --reverse --format='%h %s' "$RANGE" >> "$MSG_FILE"
+		commits_to_pick '%h %s' >> "$MSG_FILE"
 	fi
 }
 
@@ -109,17 +109,24 @@ require_origin_branch "$WF_STAGING_BRANCH"
 setup_branch "$WF_PROD_BRANCH" && setup_branch "$WF_TASK" && setup_branch "$WF_STAGING_BRANCH"
 require_staging_checked_out to-staging
 
-RANGE="`cherry_pick_range`"
-SHA_LINE="`trim_whitespace "$(git log --reverse --format='%h' "$RANGE" | tr '\n' ' ')"`"
+require_bookmark_on_branch
 
-if [ "$SHA_LINE" == "" ]; then
+RANGE="`cherry_pick_range`"
+# The commits themselves rather than the range they were read from: what is
+# picked is the range less production's own commits, and handing git the range
+# would put those back. Full shas, so nothing here depends on how short a sha
+# has to be in this repository to be unambiguous.
+PICK_LIST="`trim_whitespace "$(commits_to_pick | tr '\n' ' ')"`"
+SHA_LINE="`trim_whitespace "$(commits_to_pick '%h' | tr '\n' ' ')"`"
+
+if [ "$PICK_LIST" == "" ]; then
 	print_msg "$WF_STAGING_BRANCH is already level with $WF_TASK - nothing to cherry-pick"
 	print_build_msg
 	exit 0
 fi
 
-print_msg "Cherry-picking $RANGE onto $WF_STAGING_BRANCH"
-emit "git cherry-pick -Xignore-all-space -n $RANGE"
+print_msg "Cherry-picking $SHA_LINE onto $WF_STAGING_BRANCH"
+emit "git cherry-pick -Xignore-all-space -n $PICK_LIST"
 PICK_STATUS=$?
 
 if [ -n "`git ls-files -u`" ]; then
