@@ -109,6 +109,8 @@ require_origin_branch "$WF_STAGING_BRANCH"
 setup_branch "$WF_PROD_BRANCH" && setup_branch "$WF_TASK" && setup_branch "$WF_STAGING_BRANCH"
 require_staging_checked_out to-staging
 
+require_bookmark_on_branch
+
 RANGE="`cherry_pick_range`"
 SHA_LINE="`trim_whitespace "$(git log --reverse --format='%h' "$RANGE" | tr '\n' ' ')"`"
 

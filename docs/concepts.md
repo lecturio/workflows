@@ -95,6 +95,13 @@ Two consequences are worth knowing:
   picks the commits again from wherever the previous bookmark sits. That is the
   lever behind both recovery procedures in
   [troubleshooting](troubleshooting.md).
+* **Rebasing the ticket branch invalidates the bookmark.** It records a commit,
+  and a rebase rewrites every commit on the branch, so the bookmark is left
+  pointing at a commit nothing reaches any more and `origin/ABC-123-track-N..ABC-123`
+  stops meaning "since the last sync". `to-staging` and `resolved` check for this
+  and stop, printing the commands that replay what staging is missing and bookmark
+  it. Which new commit answers to the bookmarked one is not something git records
+  — a rebase may drop, squash or reorder commits — so the tool does not guess.
 
 What the tool leaves to you
 ---------------------------
@@ -106,7 +113,9 @@ What the tool leaves to you
 * **It doesn't rebase your ticket branch onto production while you work.** To pick
   up production changes mid-ticket, run `git pull --rebase origin master` on the
   ticket branch yourself. `deployable` is the only stage that rebases onto
-  production, at the very end.
+  production, at the very end. A rebase after a sync invalidates the ticket's
+  bookmark, so the next `to-staging` stops and hands you the two commands that
+  re-establish it; prefer rebasing before a sync rather than after one.
 * **It doesn't merge the pull request.** `pr` only prints a URL; production is
   updated by `deployable` plus your push.
 * **It doesn't create the deployed branches.** Both production and staging must

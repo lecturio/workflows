@@ -136,6 +136,56 @@ function cherry_pick_range() {
 }
 
 #
+# Refuse when the bookmark is no longer part of the ticket branch.
+#
+# A bookmark records a commit, and the range above answers "what has staging not
+# seen" by ancestry alone. A rebase of the ticket branch rewrites every commit on
+# it, so the bookmark is left pointing into a chain nothing reaches any more: the
+# range stops meaning since the last sync and widens to everything since the old
+# base, which is how production's commits came to be cherry-picked onto staging,
+# where a hotfix that was never part of this ticket conflicts with another
+# ticket's work.
+#
+# The range cannot be repaired here. Which new commit corresponds to the
+# bookmarked one is not something git records, and a rebase may drop, squash or
+# reorder commits, so counting them is a guess - and a guess that is wrong syncs
+# the wrong range without saying so, which is worse than the conflict it would be
+# replacing. The run stops instead and hands back the commands that replay what
+# staging is missing and bookmark it, which is what "resolved sync" is for.
+#
+# Nothing here catches a bookmark made by hand over commits that were never
+# synced: it sits at the ticket tip, exactly where a sync that just ran leaves
+# one, and the two states cannot be told apart. This is the guard that keeps the
+# rebase from being a reason to make one.
+#
+function require_bookmark_on_branch() {
+	local TRACK_NUM="$(highest_track_num)"
+
+	if [ "$TRACK_NUM" == "" ]; then
+		return 0
+	fi
+
+	local BOOKMARK="origin/$(track_branch_ns)${TRACK_NUM}"
+
+	# The ticket branch by its full name: a short one is resolved by precedence,
+	# and a tag sharing the name would be weighed here instead of the branch
+	if git merge-base --is-ancestor "$BOOKMARK" "refs/heads/$WF_TASK" 2>/dev/null; then
+		return 0
+	fi
+
+	WF_STATUS=1
+	print_err "$BOOKMARK is not on $WF_TASK - the branch was rebased since the last sync"
+	print_msg "A bookmark records a commit and a rebase rewrites them, so the range it opens no longer means \"since the last sync\""
+	print_msg "Replay what $WF_STAGING_BRANCH is missing, then bookmark it:"
+	print_msg "  git checkout $WF_STAGING_BRANCH && git pull --rebase origin $WF_STAGING_BRANCH"
+	print_msg "  git cherry-pick -Xignore-all-space -n \$(git rev-list --reverse $BOOKMARK..$WF_TASK --not origin/$WF_PROD_BRANCH)"
+	print_msg "  gitflow $WF_TASK resolved sync -m \"message\""
+	print_msg "That rev-list coming back empty means the rebase brought nothing new: gitflow $WF_TASK resolved sync on its own bookmarks it"
+	print_build_msg
+	exit 1
+}
+
+#
 # Bookmark the ticket-branch tip that was just put on staging, and push it.
 # Leaves you on the new tracking branch.
 #

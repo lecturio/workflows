@@ -136,5 +136,6 @@ if [ "$WF_ENV" == "" ]; then
 	require_origin_branch "$WF_PROD_BRANCH"
 	require_origin_branch "$WF_STAGING_BRANCH"
 	setup_branch "$WF_PROD_BRANCH" && setup_branch "$WF_TASK" && setup_branch "$WF_STAGING_BRANCH"
+	require_bookmark_on_branch
 	sync_feature_changes
 fi

@@ -6,6 +6,23 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* a ticket branch that was rebased since its last sync is refused by `to-staging`
+  and `resolved` instead of being cherry-picked from a bookmark that no longer
+  means anything. The bookmark records a commit and a rebase rewrites them, so
+  `origin/ABC-123-track-N..ABC-123` stopped saying "since the last sync" and
+  widened to everything since the old base - production's own commits included,
+  which were then cherry-picked onto staging, where a hotfix that was never part
+  of the ticket conflicted with another ticket's work. The refusal prints the
+  commands that replay what staging is missing and bookmark it. It does not try
+  to repair the range: which new commit answers to the bookmarked one is not
+  something git records, and a rebase may drop, squash or reorder commits, so
+  counting them is a guess, and a wrong guess syncs the wrong range without
+  saying so. The workaround it replaces - a tracking branch made by hand - is
+  what the ticket slot of this refusal exists to make unnecessary: one created at
+  the tip over commits that were never synced is indistinguishable from one a
+  sync just left, and the next `to-staging` reported
+  `staging is already level with ABC-123 - nothing to cherry-pick` under
+  `BUILD SUCCESS` and skipped those commits for good
 * new `test/smoke.sh` runs the five stages against throwaway repositories and
   checks each one's exit status against the banner it printed, the ticket it
   left checked out, what reached staging and production, and what `closed`
