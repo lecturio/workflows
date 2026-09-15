@@ -124,12 +124,13 @@ pick is reported and nothing else happens — no commit, no bookmark.
 
 The commits are listed out rather than handed to git as the range they were read
 from, so that a commit already on production cannot be cherry-picked onto staging.
-With the bookmark still an ancestor of the ticket branch that excludes nothing:
-the range then holds only the commits written on the ticket branch since the last
-sync. It is the second guard behind the one that stops the stage outright when the
-ticket branch was rebased since its last sync, which is what puts production's
-commits in the range in the first place — see
-[tracking branches](concepts.md#tracking-branches-abc-123-track-n).
+An ordinary round excludes nothing: its range holds only the commits written on
+the ticket branch since the last sync. Two things put production's commits there.
+A rebase of the ticket branch is one, and the stage stops outright on that — see
+[tracking branches](concepts.md#tracking-branches-abc-123-track-n). A merge of
+production into the ticket branch is the other, and it leaves the bookmark an
+ancestor, so that refusal never fires and this is all that stands between those
+commits and staging.
 
 The message names the commits that went in, since nobody writes these by hand:
 

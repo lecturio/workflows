@@ -191,13 +191,15 @@ function require_bookmark_on_branch() {
 #
 # $1 - a git log format for each commit, %H when it is left out
 #
-# Production's commits reach that range through a rebase - reachable from the
-# ticket branch, not from the bookmark - and require_bookmark_on_branch stops the
-# run before it gets here when that is what happened. This is the second guard
-# rather than the first: whatever widened the range, a commit that is already on
-# production is not this ticket's to put on staging. With the bookmark still an
-# ancestor it excludes nothing, since the range then holds only the commits
-# written on the ticket branch since the last sync.
+# Production's commits reach that range two ways. A rebase is one, and
+# require_bookmark_on_branch stops the run before it gets here when that is what
+# happened; a merge of production into the ticket branch is the other, and it
+# leaves the bookmark an ancestor, so that guard passes and the commits sit in
+# the range all the same. That is why this is a guard of its own rather than a
+# consequence of the one above: whatever widened the range, a commit that is
+# already on production is not this ticket's to put on staging. An ordinary round
+# excludes nothing, its range holding only the commits written on the ticket
+# branch since the last sync.
 #
 function commits_to_pick() {
 	git log --reverse --format="${1:-%H}" "$(cherry_pick_range)" \

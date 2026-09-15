@@ -114,7 +114,7 @@ What the tool leaves to you
   up production changes mid-ticket, run `git pull --rebase origin master` on the
   ticket branch yourself. `deployable` is the only stage that rebases onto
   production, at the very end. A rebase after a sync invalidates the ticket's
-  bookmark, so the next `to-staging` stops and hands you the two commands that
+  bookmark, so the next `to-staging` stops and hands you the three commands that
   re-establish it; prefer rebasing before a sync rather than after one.
 * **It doesn't merge the pull request.** `pr` only prints a URL; production is
   updated by `deployable` plus your push.
