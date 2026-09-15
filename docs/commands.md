@@ -108,7 +108,7 @@ git cherry-pick --quit                        # only to clear a finished cherry-
 git checkout master  && git pull --rebase origin master
 git checkout ABC-123 && git pull --rebase origin ABC-123
 git checkout staging && git pull --rebase origin staging
-git cherry-pick -Xignore-all-space -n <range>
+git cherry-pick -Xignore-all-space -n <commits>
 git commit -F <generated message>
 git checkout ABC-123
 git branch ABC-123-track-N                    # N = previous highest + 1
@@ -117,10 +117,19 @@ git push origin ABC-123-track-N
 git checkout staging && git pull --rebase origin staging
 ```
 
-`<range>` is the same one [`resolved`](deprecated.md#resolved) uses: everything
+`<commits>` is the same set [`resolved`](deprecated.md#resolved) picks: everything
 since the highest `origin/ABC-123-track-N`, or `origin/master..ABC-123` on the
-first sync. An empty range is reported and nothing else happens — no commit, no
-bookmark.
+first sync, less anything already reachable from `origin/master`. Nothing left to
+pick is reported and nothing else happens — no commit, no bookmark.
+
+The commits are listed out rather than handed to git as the range they were read
+from, so that a commit already on production cannot be cherry-picked onto staging.
+With the bookmark still an ancestor of the ticket branch that excludes nothing:
+the range then holds only the commits written on the ticket branch since the last
+sync. It is the second guard behind the one that stops the stage outright when the
+ticket branch was rebased since its last sync, which is what puts production's
+commits in the range in the first place — see
+[tracking branches](concepts.md#tracking-branches-abc-123-track-n).
 
 The message names the commits that went in, since nobody writes these by hand:
 

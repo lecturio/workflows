@@ -23,6 +23,13 @@ Current version: 0.0.4.SNAPSHOT
   sync just left, and the next `to-staging` reported
   `staging is already level with ABC-123 - nothing to cherry-pick` under
   `BUILD SUCCESS` and skipped those commits for good
+* a sync never cherry-picks a commit that is already on production. Both stages
+  now pick an explicit list of commits - the range less anything reachable from
+  `origin/master` - rather than handing git the range itself. With the bookmark
+  still an ancestor of the ticket branch this excludes nothing, since the range
+  then holds only the commits written on the ticket branch since the last sync;
+  it is the second guard behind the one above, so that whatever widens a range,
+  production's commits are not this ticket's to put on staging
 * new `test/smoke.sh` runs the five stages against throwaway repositories and
   checks each one's exit status against the banner it printed, the ticket it
   left checked out, what reached staging and production, and what `closed`

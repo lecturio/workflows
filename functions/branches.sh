@@ -186,6 +186,25 @@ function require_bookmark_on_branch() {
 }
 
 #
+# The commits a sync applies, oldest first: the range above, less anything that
+# is already on production.
+#
+# $1 - a git log format for each commit, %H when it is left out
+#
+# Production's commits reach that range through a rebase - reachable from the
+# ticket branch, not from the bookmark - and require_bookmark_on_branch stops the
+# run before it gets here when that is what happened. This is the second guard
+# rather than the first: whatever widened the range, a commit that is already on
+# production is not this ticket's to put on staging. With the bookmark still an
+# ancestor it excludes nothing, since the range then holds only the commits
+# written on the ticket branch since the last sync.
+#
+function commits_to_pick() {
+	git log --reverse --format="${1:-%H}" "$(cherry_pick_range)" \
+		--not "origin/$WF_PROD_BRANCH"
+}
+
+#
 # Bookmark the ticket-branch tip that was just put on staging, and push it.
 # Leaves you on the new tracking branch.
 #
