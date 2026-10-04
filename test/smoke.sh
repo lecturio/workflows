@@ -142,6 +142,28 @@ stage ABC-123 nonsense
 check "an unknown stage is refused" 1 "$STATUS"
 
 #
+# The key check reads origin as git uses it. An ssh origin on github.com is
+# checked, and a refusal from ssh stops the run before anything happens; the
+# same origin rewritten by an "insteadOf" - how a machine with no key reaches
+# github.com over https - is not ssh at all, and the stage runs. The rewrite
+# points at the fixture's own origin, so nothing leaves this machine.
+#
+git checkout -q master
+printf '#!/bin/bash\nexit 255\n' > "$ROOT/bin/ssh"
+git remote set-url origin git@github.com:smoke/proj.git
+stage ABC-200 in-progress
+check "a refused github.com key stops the run" 1 "$STATUS"
+check "a refused key says how to load one" yes "`says 'ssh-add'`"
+check "a refused key creates no branch" 1 "`git rev-parse -q --verify ABC-200 >/dev/null; echo $?`"
+git config "url.$ROOT/origin.insteadOf" git@github.com:smoke/proj.git
+stage ABC-200 in-progress
+check "an origin rewritten away from ssh skips the key check" 0 "$STATUS"
+check "an origin rewritten away from ssh pushes the ticket" 0 "`git rev-parse -q --verify origin/ABC-200 >/dev/null; echo $?`"
+git config --remove-section "url.$ROOT/origin"
+git remote set-url origin "$ROOT/origin"
+printf '#!/bin/bash\nexit 1\n' > "$ROOT/bin/ssh"
+
+#
 # A stage that fails partway and runs on to the end, which every other refusal
 # here does not: they exit where they happen. Without a fetch refspec the push
 # lands but no tracking ref follows it, so "git branch -u" fails and the pull

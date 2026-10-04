@@ -6,6 +6,14 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* the github.com key check reads `origin` as git uses it, after any `insteadOf`
+  in git's configuration. A machine with no ssh key that sends
+  `git@github.com:` over https with
+  `url.https://github.com/.insteadOf git@github.com:` - a bot pushing with a
+  token, for one - fetched and pushed fine and was still stopped before every
+  stage with `Add your private key ssh-add [path to pk].`, because the check
+  read the URL as written. It is now `git ls-remote --get-url origin`, so an
+  origin that is ssh in fact is checked exactly as before
 * a ticket branch that was rebased since its last sync is refused by `to-staging`
   and `resolved` instead of being cherry-picked from a bookmark that no longer
   means anything. The bookmark records a commit and a rebase rewrites them, so

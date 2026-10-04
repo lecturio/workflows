@@ -203,7 +203,7 @@ When a run fails
 | Message | Do this |
 | --- | --- |
 | `[ERROR] Update workflows to the latest version` | `gitflow self update`, then re-run the stage. If it reports unpushed local commits in the tool's own clone, tell the user — the check keeps failing until those are pushed or dropped |
-| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com - checked for every stage but `pr`, and only on an ssh `origin` there. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
+| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com - checked for every stage but `pr`, and only on an ssh `origin` there, after git's `insteadOf` rewrites. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
 | `[ERROR] gitflow must be run inside a project clone` | `cd` into the project first; the tool reads the repository root and `origin` from the working directory |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `git push` on the ticket branch, then re-run |
 | `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | the ticket branch, or origin's copy of it, is missing - check the name against `git branch -a` before anything else. `in-progress` starts a ticket that has no branch; a branch that never left the machine needs `git push` |
