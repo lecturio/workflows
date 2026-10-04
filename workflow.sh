@@ -114,6 +114,14 @@ if [ -z "$WF_REPO" ]; then
 	print_build_msg
 	exit 1
 fi
+#
+# The URL git actually talks to, which is not always the one written down: an
+# "insteadOf" in git's configuration - a machine with no ssh key that sends
+# github.com over https, say - rewrites it on every fetch and push, and only
+# ls-remote --get-url applies that. The raw value is read first because, with no
+# origin at all, --get-url echoes the word "origin" back rather than failing.
+#
+WF_REPO=$(git ls-remote --get-url origin)
 export WF_REPO
 
 #
