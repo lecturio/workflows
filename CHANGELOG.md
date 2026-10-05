@@ -6,6 +6,13 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `to-staging --verify "command"` runs a command on the picked tree before
+  anything is committed. When it fails, staging is reset to where it was, no
+  commit and no `ABC-123-track-N` bookmark exist, locally or on origin, and the
+  stage exits 3, so a script can tell a failed check from a conflict. Without
+  it, a check could only run after the stage had committed and pushed the
+  bookmark, and a stale bookmark makes the next `to-staging` skip the commits
+  that were dropped. Without `--verify` nothing changes
 * the github.com key check reads `origin` as git uses it, after any `insteadOf`
   in git's configuration. A machine with no ssh key that sends
   `git@github.com:` over https with

@@ -125,6 +125,48 @@ check "a second to-staging picks nothing" "sync it" "`git log -1 --format=%s sta
 stage TYPO-999 to-staging
 check "to-staging refuses an unknown ticket" 1 "$STATUS"
 
+#
+# --verify runs a command on the picked tree before the commit. A failure leaves
+# staging as it was, with nothing committed and no bookmark, and exits 3; a pass
+# commits and bookmarks as without it. The command reads verify.txt, which only
+# the picked commit has, so it proves what tree it was given.
+#
+git checkout -q master
+stage VER-1 in-progress
+echo picked > verify.txt
+git add verify.txt
+git commit -qm "the verified work"
+git push -q origin VER-1
+STAGING_BEFORE=`git rev-parse staging`
+stage VER-1 to-staging --verify "grep -q picked verify.txt && exit 7"
+check "a failing --verify exits 3" 3 "$STATUS"
+check "a failing --verify reports failure" yes "`says 'BUILD FAILURE'`"
+check "a failing --verify commits nothing" "$STAGING_BEFORE" "`git rev-parse staging`"
+check "a failing --verify leaves you on staging" staging "`git rev-parse --abbrev-ref HEAD`"
+check "a failing --verify leaves a clean tree" "" "`git status --porcelain`"
+check "a failing --verify bookmarks nothing locally" "" "`git branch --list 'VER-1-track-*'`"
+check "a failing --verify bookmarks nothing on origin" "" "`git ls-remote --heads origin 'VER-1-track-*'`"
+
+stage VER-1 to-staging --verify "grep -q picked verify.txt" -m "verified sync"
+check "a passing --verify exits 0" 0 "$STATUS"
+check "a passing --verify commits with -m after it" "verified sync" "`git log -1 --format=%s staging`"
+check "a passing --verify bookmarks on origin" yes "`git ls-remote --heads origin VER-1-track-1 | grep -q . && echo yes || echo no`"
+
+stage VER-1 to-staging --verify="touch '$ROOT/ran'"
+check "an empty pick exits 0 with --verify" 0 "$STATUS"
+check "an empty pick runs no --verify command" no "`[ -e "$ROOT/ran" ] && echo yes || echo no`"
+
+STAGING_BEFORE=`git rev-parse staging`
+stage VER-1 to-staging --verify ""
+check "an empty --verify is refused" 1 "$STATUS"
+stage VER-1 to-staging --verify=
+check "an empty --verify= is refused" 1 "$STATUS"
+stage VER-1 to-staging -m "a message" --verify true
+check "--verify after -m is refused" 1 "$STATUS"
+stage VER-1 to-staging --verify true extra
+check "a word after the --verify command is refused" 1 "$STATUS"
+check "the refusals commit nothing" "$STAGING_BEFORE" "`git rev-parse staging`"
+
 git checkout -q ABC-123
 stage ABC-123 deployable
 check "deployable exits 0" 0 "$STATUS"

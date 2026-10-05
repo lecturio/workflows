@@ -3,7 +3,8 @@
 #
 # One shot: cherry-pick the ticket commits staging has not seen yet, commit them
 # with a message naming those commits, and bookmark how far staging has caught
-# up. Conflicts fail the stage without committing anything.
+# up. Conflicts fail the stage without committing anything, and so does a
+# --verify command that fails on the picked tree.
 #
 
 WF_ARGC=$#
@@ -11,16 +12,41 @@ MSG_FILE=""
 trap 'if [ -n "$MSG_FILE" ]; then rm -f "$MSG_FILE"; fi' EXIT
 
 #
-# This stage takes no option. -m lands in the same slot, so the message forms
+# --verify "command" or --verify=command, first after the stage. What follows it
+# is read as if the option were not there: nothing, or a message form.
+#
+VERIFY=""
+VERIFY_GIVEN=0
+OPT="$WF_ENV"
+OPT_POS=3
+case "$WF_ENV" in
+	--verify)
+		VERIFY_GIVEN=1
+		VERIFY="$4"
+		OPT="$5"
+		OPT_POS=5
+		;;
+	--verify=*)
+		VERIFY_GIVEN=1
+		VERIFY="${WF_ENV#--verify=}"
+		OPT="$4"
+		OPT_POS=4
+		;;
+esac
+OPT_ARGC=$((WF_ARGC - OPT_POS + 3))
+
+#
+# This stage takes no option but --verify, read above. -m lands in the slot after
+# it, or in its place, so the message forms
 # workflow.sh parses are the only words allowed to follow it, and an attached
 # form carries its message inside that one word: nothing may come after it.
 #
 function require_no_option() {
-	local ALLOWED=0
+	local ALLOWED=0 ARG
 
-	case "$WF_ENV" in
+	case "$OPT" in
 		"")
-			[ "$WF_ARGC" -le 2 ] && ALLOWED=1
+			[ "$OPT_ARGC" -le 2 ] && ALLOWED=1
 			;;
 		-m | --message)
 			# the message follows, and every word after it belongs to it
@@ -29,13 +55,33 @@ function require_no_option() {
 		-m* | --message=*)
 			# an empty value (-m, --message=) is allowed through so the check
 			# below can say a message is missing rather than call it an option
-			[ "$WF_ARGC" -le 3 ] && ALLOWED=1
+			[ "$OPT_ARGC" -le 3 ] && ALLOWED=1
 			;;
 	esac
 
 	if [ $ALLOWED -eq 0 ]; then
 		WF_STATUS=1
-		print_err "to-staging takes no option other than -m: gitflow $WF_TASK to-staging [-m \"message\"]"
+		print_err "to-staging takes no option other than --verify and -m: gitflow $WF_TASK to-staging [--verify \"command\"] [-m \"message\"]"
+		print_build_msg
+		exit 1
+	fi
+
+	# -m takes every word after it, so a --verify there would become part of
+	# the message and the stage would commit without running it.
+	for ARG in "${@:OPT_POS+1}"; do
+		case "$ARG" in
+			--verify | --verify=*)
+				WF_STATUS=1
+				print_err "--verify goes before -m: gitflow $WF_TASK to-staging --verify \"command\" -m \"message\""
+				print_build_msg
+				exit 1
+				;;
+		esac
+	done
+
+	if [[ $VERIFY_GIVEN -eq 1 && -z "`trim_whitespace "$VERIFY"`" ]]; then
+		WF_STATUS=1
+		print_err "--verify needs a command: gitflow $WF_TASK to-staging --verify \"command\""
 		print_build_msg
 		exit 1
 	fi
@@ -46,9 +92,9 @@ function require_no_option() {
 	# to the generated message, which is not what someone who typed -m asked
 	# for. git would not keep it either: it strips a blank subject line, and the
 	# first line of the generated body would end up as the subject instead.
-	if [[ -n "$WF_ENV" && -z "$MESSAGE" ]]; then
+	if [[ -n "$OPT" && -z "$MESSAGE" ]]; then
 		WF_STATUS=1
-		print_err "$WF_ENV needs a message: gitflow $WF_TASK to-staging -m \"message\""
+		print_err "$OPT needs a message: gitflow $WF_TASK to-staging -m \"message\""
 		print_msg "Leave it out to let the stage name the commits it picked"
 		print_build_msg
 		exit 1
@@ -99,7 +145,30 @@ function write_commit_message() {
 	fi
 }
 
-require_no_option
+#
+# The command runs on the picked tree before anything is committed, from the
+# top of the clone. When it fails, the pick is reset away and the stage stops
+# before the commit and the bookmark, with a status of its own, so a caller can
+# tell a failed check from a conflict. Files the command created and git does
+# not track are left where it put them.
+#
+function run_verify() {
+	local VERIFY_STATUS=0
+
+	print_msg "Verifying the picked tree: $VERIFY"
+	(cd "$WF_GIT_ROOT" && bash -c "$VERIFY") || VERIFY_STATUS=$?
+
+	if [ $VERIFY_STATUS -ne 0 ]; then
+		emit_failonerror "git reset -q --hard" quiet
+		WF_STATUS=1
+		print_err "--verify exited $VERIFY_STATUS: nothing committed, no bookmark, $WF_STAGING_BRANCH left as it was"
+		print_build_msg
+		exit 3
+	fi
+	print_msg "Verified: $VERIFY"
+}
+
+require_no_option "$@"
 emit_failonerror_pending_commits "$WF_TASK"
 require_clean_start
 
@@ -138,6 +207,9 @@ fi
 if git diff --cached --quiet; then
 	print_msg "$WF_STAGING_BRANCH already carries $SHA_LINE - bookmarking without a commit"
 else
+	if [ $VERIFY_GIVEN -eq 1 ]; then
+		run_verify
+	fi
 	write_commit_message
 	emit_failonerror "git commit -F \"$MSG_FILE\"" print_msg
 	print_msg "Committed on $WF_STAGING_BRANCH: `git log --format='%h %s' -1`"
