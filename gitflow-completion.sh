@@ -88,7 +88,7 @@ _completion() {
 		elif [[ $prev == "resolved" ]]; then
 			COMPREPLY=( $(compgen -W "sync" -- "${cur}") )
 		elif [[ $prev == "to-staging" ]]; then
-			COMPREPLY=( $(compgen -W "-m" -- "${cur}") )
+			COMPREPLY=( $(compgen -W "--verify -m" -- "${cur}") )
 		elif [[ $prev == "sync" && $cword == 3 ]]; then
 			COMPREPLY=( $(compgen -W "-m" -- "${cur}") )
 		fi

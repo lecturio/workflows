@@ -11,7 +11,8 @@ stripped, so tab-completing a remote branch works. The name has to match
 
 `STAGE` is one of `in-progress`, `pr`, `to-staging`, `deployable`, `closed` —
 which is also the order a ticket runs them in — plus the deprecated `resolved`.
-`OPTION` is only ever `sync`, for `resolved`. `-m` applies to `to-staging` and to
+`OPTION` is only ever `sync`, for `resolved`, and `--verify`, for `to-staging`
+([below](#verify)). `-m` applies to `to-staging` and to
 `resolved sync`. The two stages that take one, `to-staging` and `resolved`,
 refuse a word they have no meaning for by name rather than ignoring it.
 
@@ -27,7 +28,8 @@ the stage is not `pr` - stopping both when ssh refuses and when ssh cannot be
 run at all - loads `.gitflow` if present and stops if a line of it cannot be
 read, then runs `git fetch` and `git remote prune origin` in the project and
 stops if that fetch fails, rather than work from refs it could not update. It
-finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1 to match, so
+finishes with `BUILD SUCCESS` or `BUILD FAILURE`, and exits 0 or 1 to match
+(3 for a failed [`to-staging --verify`](#verify)), so
 a run can be read by a script, a CI step or an `&&` chain. Output of the noisier
 commands is written to a log of the run's own under `$TMPDIR`, or under `/tmp`
 when that is unset.
@@ -132,6 +134,31 @@ A rebase of the ticket branch is one, and the stage stops outright on that — s
 production into the ticket branch is the other, and it leaves the bookmark an
 ancestor, so that refusal never fires and this is all that stands between those
 commits and staging.
+
+### `--verify`
+
+```bash
+gitflow ABC-123 to-staging --verify "make test" [-m "message"]
+gitflow ABC-123 to-staging --verify="make test"
+```
+
+Runs a command on the picked tree before anything is committed: after the
+cherry-pick, before `git commit` and the bookmark. It runs through `bash -c` from
+the top of the clone, so it sees staging with the ticket's commits applied and
+not yet committed, which is exactly what the commit would hold.
+
+* **Exit 0:** the stage goes on as without the option: commit, bookmark, and
+  the push for you to run.
+* **Anything else:** `git reset --hard` puts staging back where it was, nothing
+  is committed, no `ABC-123-track-N` is created locally or on origin, and the
+  stage ends `BUILD FAILURE` with **exit 3**, so a script can tell a failed check
+  from a conflict or an error, which exit 1. There is nothing to undo.
+
+The command is not run when there is nothing to pick, or when staging already
+carries the picked changes. It must leave `HEAD` and tracked files alone; files
+it creates that git does not track are left where it put them. `--verify` comes
+right after the stage, before any `-m`, because `-m` takes every word after it:
+a `--verify` after `-m` is refused rather than folded into the message.
 
 The message names the commits that went in, since nobody writes these by hand:
 

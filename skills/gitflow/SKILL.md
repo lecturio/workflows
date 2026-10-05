@@ -127,6 +127,15 @@ it has to come last.
 An empty range is reported and nothing happens, so a second run right after a
 successful one is harmless.
 
+To check the picked tree before it is committed, pass a command:
+`gitflow ABC-123 to-staging --verify "<command>"`, before any `-m`. It runs from
+the top of the clone on staging with the picks applied and not yet committed.
+**Exit 3** means the command failed: staging is back where it was, nothing was
+committed and no bookmark exists, locally or on origin. There is nothing to
+clean up, so do not reset, delete branches or re-pick by hand; report the
+command's output and fix the cause on the ticket branch. Exit 1 keeps its usual
+meaning (a conflict, a refusal, an error).
+
 `deployable`
 ------------
 

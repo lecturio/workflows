@@ -30,6 +30,7 @@ in-progress  →  pr  →  to-staging  →  deployable  →  closed
 gitflow ABC-123 in-progress   # create or switch to the ticket branch
 gitflow ABC-123 pr            # print the pull-request link for review
 gitflow ABC-123 to-staging    # put the new commits on staging
+                              # (--verify "cmd" checks them before the commit)
 gitflow ABC-123 deployable    # fold the ticket into production
 gitflow ABC-123 closed        # delete the ticket branches
 ```
