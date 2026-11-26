@@ -127,9 +127,8 @@ export WF_REPO
 #
 # The key check waits for origin, because only origin says which host the stage
 # is about to talk to: a project hosted elsewhere is not helped by an answer
-# from github.com, and `pr` prints a URL and opens no connection at all. ssh
-# closes a successful greeting with 1 - "Hi user! You've successfully
-# authenticated" - so 0 and 1 are the statuses that pass. 255 is ssh's own
+# from github.com. ssh closes a successful greeting with 1 - "Hi user! You've
+# successfully authenticated" - so 0 and 1 are the statuses that pass. 255 is ssh's own
 # refusal, and a key nothing has loaded is its usual reason. Anything else is
 # not ssh answering at all - 127 is no ssh on the machine - and it leaves the
 # key as unchecked as a refusal does, so the run stops on it too, rather than

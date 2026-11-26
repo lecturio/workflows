@@ -29,12 +29,14 @@ The stages
 ----------
 
 ```
-in-progress  →  pr  →  to-staging  →  deployable  →  closed
-                        (repeat)
+in-progress  →  to-staging  →  deployable  →  closed
+                 (repeat)
 ```
 
 Only `to-staging` repeats: once per round of commits while the ticket is being
-reviewed on staging. The other four happen once per ticket. `resolved` and
+reviewed on staging. The other three happen once per ticket. The pull request
+for code review is opened with `gh`, not `gitflow` - see [below](#the-pull-request).
+`gitflow ABC-123 pr` was removed and only prints that pointer now. `resolved` and
 `resolved sync` are deprecated — run them only when a failure message names them,
 which happens when a staging sync conflicted (see [conflicts.md](conflicts.md)).
 
@@ -55,8 +57,8 @@ Rules
    the commits sitting in the local branch, and that manual push is deliberate.
    Show what is queued (`git log --oneline origin/staging..staging`) and let the
    user push, or ask first and quote the exact command.
-3. **Never merge the pull request.** `pr` prints a compare URL for code review
-   and nothing else; production is updated by `deployable` plus a push.
+3. **Never merge the pull request.** It exists for code review and nothing
+   else; production is updated by `deployable` plus a push.
 4. **Ask before `closed`.** It deletes the ticket branch and every
    `ABC-123-track-N` bookmark, local and remote, with no undo. It stops to ask
    only when some of them hold commits production has not got, and with no
@@ -85,17 +87,18 @@ that run `git pull --rebase origin master` on the ticket branch yourself.
 Then commit and push with plain git. Nothing about the day-to-day work goes
 through `gitflow`.
 
-`pr`
-----
+The pull request
+----------------
 
 ```bash
-gitflow ABC-123 pr
+gh pr create --base master --head ABC-123
 ```
 
-Prints the GitHub compare URL from the ticket branch into production and runs no
-git commands. Give the URL to the user. Open it once, as soon as the branch has
-commits, so review runs while the ticket is tested on staging; it follows the
-branch, so later pushes need no second link.
+Not a `gitflow` stage. Open it once, as soon as the ticket branch has commits,
+so review runs while the ticket is tested on staging; it follows the branch, so
+later pushes need no second one. `--base` is the production branch, which
+`.gitflow` may name differently. Ask before creating it - it is visible to the
+team - and give the user the URL `gh` prints.
 
 `to-staging`
 ------------
@@ -212,7 +215,7 @@ When a run fails
 | Message | Do this |
 | --- | --- |
 | `[ERROR] Update workflows to the latest version` | `gitflow self update`, then re-run the stage. If it reports unpushed local commits in the tool's own clone, tell the user — the check keeps failing until those are pushed or dropped |
-| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com - checked for every stage but `pr`, and only on an ssh `origin` there, after git's `insteadOf` rewrites. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
+| `Add your private key ssh-add [path to pk].` | the user's ssh agent has no key for github.com - checked for every stage, but only on an ssh `origin` there, after git's `insteadOf` rewrites. Ask them to load it (`ssh-add ~/.ssh/id_ed25519`); do not go looking for key files yourself |
 | `[ERROR] gitflow must be run inside a project clone` | `cd` into the project first; the tool reads the repository root and `origin` from the working directory |
 | `[ERROR] Local changes need to be pushed to ABC-123` | `git push` on the ticket branch, then re-run |
 | `[ERROR] Branch ABC-123 does not exist locally` / `[ERROR] Branch origin/ABC-123 does not exist - push it first` | the ticket branch, or origin's copy of it, is missing - check the name against `git branch -a` before anything else. `in-progress` starts a ticket that has no branch; a branch that never left the machine needs `git push` |

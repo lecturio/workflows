@@ -6,6 +6,11 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `pr` is removed. It printed a GitHub compare URL and did nothing else;
+  `gh pr create --base master` from the ticket branch opens the pull request
+  itself. `gitflow ABC-123 pr` now fails with that command rather than the list
+  of stages, and the github.com key check no longer has a stage to skip. See
+  [docs/deprecated.md](docs/deprecated.md#pr-removed)
 * `to-staging --verify "command"` runs a command on the picked tree before
   anything is committed. When it fails, staging is reset to where it was, no
   commit and no `ABC-123-track-N` bookmark exist, locally or on origin, and the

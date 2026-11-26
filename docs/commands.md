@@ -9,8 +9,10 @@ gitflow <TICKET> <STAGE> [OPTION] [-m "message"]
 stripped, so tab-completing a remote branch works. The name has to match
 `^[A-Za-z0-9][-A-Za-z0-9._/]*$`.
 
-`STAGE` is one of `in-progress`, `pr`, `to-staging`, `deployable`, `closed` —
-which is also the order a ticket runs them in — plus the deprecated `resolved`.
+`STAGE` is one of `in-progress`, `to-staging`, `deployable`, `closed` — which
+is also the order a ticket runs them in — plus the deprecated `resolved`. `pr`
+was removed in 0.0.4; open the pull request with `gh pr create` (see
+[deprecated](deprecated.md#pr-removed)).
 `OPTION` is only ever `sync`, for `resolved`, and `--verify`, for `to-staging`
 ([below](#verify)). `-m` applies to `to-staging` and to
 `resolved sync`. The two stages that take one, `to-staging` and `resolved`,
@@ -23,8 +25,8 @@ Every run does the same preflight before the stage: fetches this tool's own
 clone and stops if it is behind its remote, requires the current directory to be
 inside a git clone, reads that repo's `origin` URL as git uses it - after any
 `insteadOf` rewrite in git's configuration - checks `ssh -T
-git@github.com` for a loaded key when that URL is an ssh one on github.com and
-the stage is not `pr` - stopping both when ssh refuses and when ssh cannot be
+git@github.com` for a loaded key when that URL is an ssh one on github.com -
+stopping both when ssh refuses and when ssh cannot be
 run at all - loads `.gitflow` if present and stops if a line of it cannot be
 read, then runs `git fetch` and `git remote prune origin` in the project and
 stops if that fetch fails, rather than work from refs it could not update. It
@@ -68,28 +70,6 @@ Leaves you on `ABC-123`, level with its remote. Safe to re-run: that is how you
 return to the branch and pick up a teammate's commits. It does not bring
 production changes into the branch — do that with `git pull --rebase origin master`
 when you need it.
-
-`pr`
-----
-
-Prints the GitHub compare URL for a pull request from the ticket branch into
-production. Runs no git commands.
-
-```bash
-$ gitflow ABC-123 pr
-[INFO] https://github.com/lecturio/web-apps/compare/master...ABC-123?expand=1
-```
-
-The URL is built from the repo's `origin`, which may be `git@github.com:…`,
-`ssh://git@github.com/…` or `https://github.com/…`; anything else is an error.
-Slashes in branch names are percent-encoded, so `release/1.2` becomes
-`release%2F1.2`.
-
-The pull request is for code review. Open it once, as soon as the branch has
-commits on it, and leave it open while the ticket goes round `to-staging`: it
-follows the branch, so every later push shows up in it. Merging it on GitHub is
-not part of this workflow — `deployable` plus your push is what updates
-production.
 
 `to-staging`
 ------------

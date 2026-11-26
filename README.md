@@ -19,16 +19,16 @@ branch name.
 The stages
 ----------
 
-Five stages, in the order a ticket runs them:
+Four stages, in the order a ticket runs them:
 
 ```
-in-progress  →  pr  →  to-staging  →  deployable  →  closed
-                        (repeat)
+in-progress  →  to-staging  →  deployable  →  closed
+                 (repeat)
 ```
 
 ```bash
 gitflow ABC-123 in-progress   # create or switch to the ticket branch
-gitflow ABC-123 pr            # print the pull-request link for review
+gh pr create --base master    # open the pull request for review (not gitflow)
 gitflow ABC-123 to-staging    # put the new commits on staging
                               # (--verify "cmd" checks them before the commit)
 gitflow ABC-123 deployable    # fold the ticket into production
@@ -36,11 +36,12 @@ gitflow ABC-123 closed        # delete the ticket branches
 ```
 
 Only `to-staging` repeats: you run it again for every round of commits while the
-ticket is being reviewed on staging. The other four happen once per ticket.
+ticket is being reviewed on staging. The other three happen once per ticket.
 
 `resolved` and `resolved sync` are **deprecated**. They split `to-staging` into
-two steps, and nothing but a conflicted sync needs them now — see
-[docs/deprecated.md](docs/deprecated.md).
+two steps, and nothing but a conflicted sync needs them now. `pr` was
+**removed**: open the pull request with the [GitHub CLI](https://cli.github.com).
+Both are covered in [docs/deprecated.md](docs/deprecated.md).
 
 One further command acts on the tool itself rather than on a ticket:
 
@@ -53,7 +54,7 @@ Requirements
 
 * bash and git, on macOS or Linux
 * an SSH key loaded in your agent when the project's `origin` is an ssh URL on
-  github.com: every stage but `pr` checks it with
+  github.com: every stage checks it with
   `ssh -o BatchMode=yes -T git@github.com` before it starts, and that check never
   prompts. A greeting answers 0 or 1 and passes; a refusal answers 255 and asks
   for the key; any other status is not `ssh` reporting on the key at all - 127 is
@@ -115,13 +116,13 @@ Quick start: one ticket, end to end
    git commit -am "ABC-123 add the thing" && git push
    ```
 
-3. **Open the pull request.** Prints the compare URL into production and runs no
-   git commands. Open it as soon as there is something to read, so the code
+3. **Open the pull request** with the GitHub CLI, from the ticket branch, into
+   production. Open it as soon as there is something to read, so the code
    review runs while the ticket is being tested on staging. The PR is a review
    vehicle: leave it unmerged, step 5 is what updates production.
 
    ```bash
-   gitflow ABC-123 pr
+   gh pr create --base master
    ```
 
 4. **Put it on staging.** Cherry-picks the commits added since your last sync,
@@ -184,7 +185,7 @@ Using it from an agent
 ----------------------
 
 `skills/gitflow` is a Claude Code skill that teaches an agent this workflow: the
-five stages and what each one leaves behind, the pushes it must not make on your
+four stages and what each one leaves behind, the pushes it must not make on your
 behalf, and how to finish a sync that conflicted. Copy it into the project it will
 be used on:
 
@@ -201,7 +202,7 @@ that changes one.
 Checking a change
 -----------------
 
-`test/smoke.sh` runs the whole flow — `in-progress`, `pr`, `to-staging`,
+`test/smoke.sh` runs the whole flow — `in-progress`, `to-staging`,
 `deployable`, `closed` — against repositories it builds and throws away, and
 checks the exit status of each stage against what its banner said:
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# The flow end to end against throwaway repositories: in-progress, pr,
+# The flow end to end against throwaway repositories: in-progress,
 # to-staging, deployable and closed, each checked for the exit status its
 # banner promises and for what it left behind. There is no framework here on
 # purpose - a stage is run, and what it did is looked at.
@@ -106,9 +106,10 @@ echo work >> shared.txt
 git commit -qam "the work"
 git push -q origin ABC-123
 
-# an origin that is not github.com: pr has nothing to print, and says so
+# pr is gone, and says what replaced it rather than listing the stages
 stage ABC-123 pr
-check "pr refuses an origin that is not github" 1 "$STATUS"
+check "pr is refused" 1 "$STATUS"
+check "pr points at gh" yes "`says 'gh pr create --base master --head ABC-123'`"
 check "pr reports the failure" yes "`says 'BUILD FAILURE'`"
 
 stage ABC-123 to-staging -m "sync it"

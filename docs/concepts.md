@@ -45,8 +45,8 @@ gitGraph
 1. `gitflow ABC-123 in-progress` cuts the branch from `origin/master` and pushes
    it (`f1` starts the work).
 2. You commit and push on `ABC-123` with plain git.
-3. `gitflow ABC-123 pr` prints a compare link into production, for code review.
-   It is opened once, early, and nothing is merged there.
+3. `gh pr create --base master` opens a pull request into production, for code
+   review. It is opened once, early, and nothing is merged there.
 4. `gitflow ABC-123 to-staging` cherry-picks the new commits onto staging, commits
    them with a message naming those commits, and records the sync. You run
    `git push origin staging`.
@@ -116,7 +116,7 @@ What the tool leaves to you
   production, at the very end. A rebase after a sync invalidates the ticket's
   bookmark, so the next `to-staging` stops and hands you the three commands that
   re-establish it; prefer rebasing before a sync rather than after one.
-* **It doesn't merge the pull request.** `pr` only prints a URL; production is
-  updated by `deployable` plus your push.
+* **It doesn't open or merge the pull request.** Open it with `gh pr create`;
+  production is updated by `deployable` plus your push, never by a merge.
 * **It doesn't create the deployed branches.** Both production and staging must
   already exist on `origin` or the stage aborts.

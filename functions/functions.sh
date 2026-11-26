@@ -6,7 +6,7 @@ source "$WF_DIR/functions/execution.sh"
 source "$WF_DIR/functions/branches.sh"
 source "$WF_DIR/functions/inflight.sh"
 
-COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
+COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" )
 
 #
 # Validation of input parameters
@@ -18,6 +18,18 @@ function validate_input_params() {
 		echo "feature name (required)"
 		echo "goal (required)"
 		echo "option (optional for goal)"
+		print_build_msg
+		exit 1
+	fi
+
+	# removed in 0.0.4: gh opens the pull request itself, where pr only printed
+	# a compare URL. Named here so the old habit gets the new command rather
+	# than a bare list of stages.
+	if [ "$WF_COMMAND" == "pr" ]; then
+		WF_STATUS=1
+		print_err "pr was removed: open the pull request with the GitHub CLI"
+		print_msg "From the ticket branch: gh pr create --base master --head $WF_TASK"
+		print_msg "--base is your production branch, if .gitflow names another"
 		print_build_msg
 		exit 1
 	fi
@@ -111,26 +123,6 @@ function trim_whitespace() {
 	s="${s#"${s%%[![:space:]]*}"}"
 	s="${s%"${s##*[![:space:]]}"}"
 	printf '%s' "$s"
-}
-
-#
-# Percent-encode a git ref for a GitHub compare URL (so / becomes %2F).
-# $1 - branch name
-#
-function github_ref_encode() {
-	local s="$1" out="" i c hex
-	local LC_ALL=C
-	for (( i = 0; i < ${#s}; i++ )); do
-		c="${s:i:1}"
-		case "$c" in
-			[A-Za-z0-9._~-]) out+="$c" ;;
-			*)
-				printf -v hex '%02X' "'$c"
-				out+="%$hex"
-				;;
-		esac
-	done
-	printf '%s' "$out"
 }
 
 #

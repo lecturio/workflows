@@ -1,20 +1,46 @@
-Deprecated stages
-=================
+Deprecated and removed stages
+=============================
+
+`pr` (removed)
+--------------
+
+`pr` was removed in 0.0.4. It printed the GitHub compare URL from the ticket
+branch into production, ran no git commands and opened nothing. The GitHub CLI
+does the same job and opens the pull request too:
+
+```bash
+gh pr create --base master          # from the ticket branch
+```
+
+`--base` is the production branch, so use the one `.gitflow` names if it is not
+`master`. The pull request is still for code review only: open it once, early,
+and leave it unmerged — `deployable` plus your push is what updates production.
+
+Running `gitflow ABC-123 pr` now fails with that command:
+
+```
+[ERROR] pr was removed: open the pull request with the GitHub CLI
+[INFO] From the ticket branch: gh pr create --base master --head ABC-123
+[INFO] --base is your production branch, if .gitflow names another
+[INFO] BUILD FAILURE
+```
+
+`resolved` and `resolved sync` (deprecated)
+-------------------------------------------
 
 `resolved` and `resolved sync` are deprecated. They still run, and nothing about
 them has been removed from the tool, but they are no longer part of the flow a
 ticket is meant to follow:
 
 ```
-in-progress  →  pr  →  to-staging  →  deployable  →  closed
+in-progress  →  to-staging  →  deployable  →  closed
 ```
 
 Use [`to-staging`](commands.md#to-staging) instead. It does what `resolved` and
 `resolved sync` do together — cherry-pick the new commits onto staging, commit
 them, record the sync — in one command, and it writes the commit message for you.
 
-The one place they are still needed
------------------------------------
+### The one place they are still needed
 
 `to-staging` refuses to commit over a cherry-pick that conflicted, and the advice
 it prints in that case names `resolved sync`, because committing what is staged
