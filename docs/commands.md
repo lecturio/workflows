@@ -9,8 +9,10 @@ gitflow <TICKET> <STAGE> [OPTION] [-m "message"]
 stripped, so tab-completing a remote branch works. The name has to match
 `^[A-Za-z0-9][-A-Za-z0-9._/]*$`.
 
-`STAGE` is one of `in-progress`, `pr`, `to-staging`, `deployable`, `closed` —
-which is also the order a ticket runs them in — plus the deprecated `resolved`.
+`STAGE` is one of `in-progress`, `to-staging`, `closed` — which is also the order
+a ticket runs them in — plus the deprecated `resolved`. `pr` and `deployable`
+were removed in 0.0.4: the pull request is opened with `gh pr create` and merged
+with `gh pr merge --rebase` (see [deprecated](deprecated.md)).
 `OPTION` is only ever `sync`, for `resolved`, and `--verify`, for `to-staging`
 ([below](#verify)). `-m` applies to `to-staging` and to
 `resolved sync`. The two stages that take one, `to-staging` and `resolved`,
@@ -23,8 +25,8 @@ Every run does the same preflight before the stage: fetches this tool's own
 clone and stops if it is behind its remote, requires the current directory to be
 inside a git clone, reads that repo's `origin` URL as git uses it - after any
 `insteadOf` rewrite in git's configuration - checks `ssh -T
-git@github.com` for a loaded key when that URL is an ssh one on github.com and
-the stage is not `pr` - stopping both when ssh refuses and when ssh cannot be
+git@github.com` for a loaded key when that URL is an ssh one on github.com -
+stopping both when ssh refuses and when ssh cannot be
 run at all - loads `.gitflow` if present and stops if a line of it cannot be
 read, then runs `git fetch` and `git remote prune origin` in the project and
 stops if that fetch fails, rather than work from refs it could not update. It
@@ -68,28 +70,6 @@ Leaves you on `ABC-123`, level with its remote. Safe to re-run: that is how you
 return to the branch and pick up a teammate's commits. It does not bring
 production changes into the branch — do that with `git pull --rebase origin master`
 when you need it.
-
-`pr`
-----
-
-Prints the GitHub compare URL for a pull request from the ticket branch into
-production. Runs no git commands.
-
-```bash
-$ gitflow ABC-123 pr
-[INFO] https://github.com/lecturio/web-apps/compare/master...ABC-123?expand=1
-```
-
-The URL is built from the repo's `origin`, which may be `git@github.com:…`,
-`ssh://git@github.com/…` or `https://github.com/…`; anything else is an error.
-Slashes in branch names are percent-encoded, so `release/1.2` becomes
-`release%2F1.2`.
-
-The pull request is for code review. Open it once, as soon as the branch has
-commits on it, and leave it open while the ticket goes round `to-staging`: it
-follows the branch, so every later push shows up in it. Merging it on GitHub is
-not part of this workflow — `deployable` plus your push is what updates
-production.
 
 `to-staging`
 ------------
@@ -182,9 +162,8 @@ yours** — the tool prints the `git push origin staging` reminder but does not 
 Because it commits without a stop for review, it refuses to start while the
 worktree has modified tracked files, rather than folding them into the staging
 commit. Untracked files are fine. It also refuses while any git operation is
-still open, and says which one it found — `resolved` and `deployable` refuse on
-the same list, through the same code, with the advice matched to what each of
-them can offer next:
+still open, and says which one it found — `resolved` refuses on the same list,
+through the same code, with the advice matched to what it can offer next:
 
 * unresolved conflicts, from a cherry-pick, a rebase, a merge, a revert or an
   interrupted `git am` (which keeps its state where a rebase does, and is told
@@ -275,79 +254,6 @@ committing that would put half a range on staging under a bookmark claiming all 
 it, so the stage points at `--abort` instead of at `resolved sync`. Rebase the
 ticket branch instead of merging into it, and the range stays pickable.
 
-`deployable`
-------------
-
-Folds the ticket into production. One-time operation, at the end of the cycle.
-
-```bash
-gitflow ABC-123 deployable
-git log --oneline -5
-git push origin master
-```
-
-```bash
-git checkout master  && git pull --rebase origin master
-git checkout ABC-123 && git pull --rebase origin ABC-123   # skipped when the branch has unpushed commits
-git checkout ABC-123 && git rebase -Xignore-all-space master
-git checkout master  && git rebase -Xignore-all-space ABC-123
-```
-
-Leaves you on production, ahead of `origin/master` by the ticket's commits.
-**Pushing production is yours**, after reviewing the log, and the stage ends by
-naming it:
-
-```
-[INFO] Now push it: git push origin master
-```
-
-The line is left out when the rebases moved production nowhere - a ticket already
-in production, a second run - since there is then nothing to push.
-
-The ticket branch has to be in the repository. A name nothing answers to is
-refused before the fetch, where it used to leak git's own
-`fatal: ambiguous argument 'origin/ABC-124..ABC-124'` from the pending-commits
-check and then fail on the checkout behind it:
-
-```
-[ERROR] deployable works on the branch ABC-124, and it is not in this repository
-[INFO] Check the name with git branch, or start the ticket: gitflow ABC-124 in-progress
-```
-
-Conflicts almost always land in the first rebase (ticket onto production); the
-second one is usually a fast-forward. `git status` tells you which of the two you
-are in. Fix the files, `git add` / `git rm`, `git rebase --continue`, then run
-`gitflow ABC-123 deployable` again.
-
-Re-running is not a way to start over. Neither of its rebases can carry a paused
-operation forward, so it refuses while one is open — a rebase, a merge, a revert,
-a `git am` or a cherry-pick, whoever started it — names it and the branch it is
-on, prints git's `--continue` and `--abort` for it, and ends `BUILD FAILURE`
-having changed nothing:
-
-```
-[ERROR] A rebase with unresolved conflicts is in progress on a detached HEAD
-[INFO] Fix the conflicted files and "git add" them, then:
-[INFO]   git rebase --continue                        # finishes it
-[INFO]   git rebase --abort                           # or drop it
-[INFO] Then run deployable again
-```
-
-With the conflicts resolved and the operation still open, the same refusal drops
-the line about the files, because there is nothing left to add:
-
-```
-[ERROR] A rebase is in progress on a detached HEAD
-[INFO]   git rebase --continue                        # finishes it
-[INFO]   git rebase --abort                           # or drop it
-[INFO] Then run deployable again
-```
-
-Before 0.0.4 it began with `git rebase --abort`, quiet and unconditional, so a
-rebase anybody was half way through was rewound before the stage had looked at
-anything — its own, or one you had started for a reason of your own — and the
-run went on to report `BUILD SUCCESS`.
-
 `closed`
 --------
 
@@ -387,8 +293,8 @@ them — `release` against `WF_PROD_BRANCH=release/1.2` — takes every other br
 it matched and leaves those two.
 
 **Everything else it deletes, it deletes for good.** The one thing it stops for is
-a branch holding commits `origin/master` has not got, which is what an unpushed
-`deployable` or work that never landed looks like:
+a branch holding commits `origin/master` has not got, which is what a pull
+request not yet merged, or work that never landed, looks like:
 
 ```
 [INFO] Commits not in origin/master: ABC-123 origin/ABC-123
@@ -396,9 +302,10 @@ a branch holding commits `origin/master` has not got, which is what an unpushed
 ```
 
 Only `y` or `Y` goes ahead; anything else deletes nothing and reports
-`BUILD FAILURE`. Commits are weighed by patch, so the rebase in `deployable` and
+`BUILD FAILURE`. Commits are weighed by patch, so a rebase-merge on GitHub and
 the cherry-picks in `to-staging` do not make a branch look unmerged for having
-different SHAs than production. Merge commits are counted whole, since the patch
+different SHAs than production. A squash merge does: its one commit matches none
+of the ticket's, so a squashed ticket is listed as unmerged. Merge commits are counted whole, since the patch
 comparison walks past them and a merge can carry a resolution that is in neither
 of its parents, and a comparison that cannot be made at all counts as unmerged. When there is no terminal to ask on — a script, a pipe, an agent — the
 run stops with the same list and deletes nothing, and you run it again by hand.

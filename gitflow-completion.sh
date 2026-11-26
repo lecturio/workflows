@@ -70,7 +70,7 @@ _completion() {
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	let cword=COMP_CWORD-1
-	opts="in-progress to-staging resolved deployable closed pr"
+	opts="in-progress to-staging resolved closed"
 	self_opts="update"
 
 	if [[ ${cword} -eq 0 ]]; then

@@ -1,9 +1,9 @@
 #!/bin/bash
 # What git has paused in this repository, and what to say about it
 #
-# Three stages apply commits somewhere - to-staging and resolved cherry-pick
-# onto staging, deployable rebases - and none of them may run over an operation
-# that is already open, or clear one it did not create. A conflict resolution is
+# Two stages apply commits - to-staging and resolved cherry-pick onto staging -
+# and neither may run over an operation that is already open, or clear one it
+# did not create. A conflict resolution is
 # work by hand that nothing can reproduce, and the marker files say only what
 # git is in the middle of, never who started it or why. So every stage asks the
 # same questions here and refuses on the answer, rather than each carrying its

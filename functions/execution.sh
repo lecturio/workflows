@@ -94,7 +94,7 @@ function emitgit_sync_branch() {
 # it, commits onto it - so a checkout whose failure is discarded leaves the
 # commands after it running against whatever HEAD happens to be. That is how
 # `closed` deleted the ticket from origin while keeping it locally, and how
-# `deployable` rebased the ticket onto itself twice and reported BUILD SUCCESS
+# the since-removed `deployable` rebased the ticket onto itself twice and reported BUILD SUCCESS
 # with production untouched.
 #
 # git's own reason is printed, because the causes need different answers: a

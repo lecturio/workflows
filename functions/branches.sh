@@ -48,31 +48,6 @@ function require_staging_checked_out() {
 }
 
 #
-# Fail when the ticket branch is not in this repository.
-#
-# The stages that bring it into existence check for themselves - in-progress
-# creates it, to-staging and resolved weigh it against origin's copy - but
-# deployable and closed used to act on a name nobody had checked: deployable
-# leaked git's own "fatal: ambiguous argument 'origin/NOPE-9..NOPE-9'" out of
-# its pending-commits check before failing on the checkout behind it, and
-# closed matched nothing, deleted nothing and reported BUILD SUCCESS. A stage
-# asked to act on a branch that is not there says so and stops.
-# $1 - stage name, for the message
-#
-function require_ticket_branch() {
-	emit "git rev-parse --verify --quiet refs/heads/$WF_TASK" quiet
-	if [ $? -eq 0 ]; then
-		return 0
-	fi
-
-	WF_STATUS=1
-	print_err "$1 works on the branch $WF_TASK, and it is not in this repository"
-	print_msg "Check the name with git branch, or start the ticket: gitflow $WF_TASK in-progress"
-	print_build_msg
-	exit 1
-}
-
-#
 # Name prefix of the ticket's tracking branches: ABC-123-track-
 #
 function track_branch_ns() {

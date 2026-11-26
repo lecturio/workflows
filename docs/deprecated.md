@@ -1,20 +1,83 @@
-Deprecated stages
-=================
+Deprecated and removed stages
+=============================
+
+`pr` (removed)
+--------------
+
+`pr` was removed in 0.0.4. It printed the GitHub compare URL from the ticket
+branch into production, ran no git commands and opened nothing. The GitHub CLI
+does the same job and opens the pull request too:
+
+```bash
+gh pr create --base master          # from the ticket branch
+```
+
+`--base` is the production branch, so use the one `.gitflow` names if it is not
+`master`. Open it once, early, and leave it open while the ticket goes round
+staging; merging it is what ships the ticket (below).
+
+Running `gitflow ABC-123 pr` now fails with that command, naming the production
+branch `.gitflow` sets:
+
+```
+[ERROR] pr was removed: open the pull request with the GitHub CLI
+[INFO] From the ticket branch: gh pr create --base master --head ABC-123
+[INFO] BUILD FAILURE
+```
+
+`deployable` (removed)
+----------------------
+
+`deployable` was removed in 0.0.4. It rebased the ticket onto production, moved
+production onto the ticket and left the push to you. Merging the pull request on
+GitHub with a rebase does the same and records it:
+
+```bash
+gh pr merge ABC-123 --rebase        # once the ticket is accepted on staging
+```
+
+Production ends up the same shape either way: the ticket's own commits, with no
+merge commit. What changes is the pull request. The rebase made new commits that
+GitHub could not match to it, so after `deployable` and the push the PR stayed
+open over work production already had, until somebody closed it by hand. Merging
+on GitHub does the rebase and marks the PR merged in one step, and master can be
+protected, since nobody pushes to it any more.
+
+Two differences from `deployable`:
+
+* **Rebase only.** A squash merge leaves one commit that matches none of the
+  ticket's, so `closed` takes the ticket for unmerged work and asks before
+  deleting it. Turn squash merging off in the repository settings.
+* **Conflicts are yours to rebase.** GitHub refuses to rebase-merge a branch that
+  conflicts with production, and has no `-Xignore-all-space`, so whitespace-only
+  differences conflict too. See
+  [the pull request cannot be rebased](troubleshooting.md#the-pull-request-cannot-be-rebased).
+
+Running `gitflow ABC-123 deployable` now fails with the merge command:
+
+```
+[ERROR] deployable was removed: merge the pull request with the GitHub CLI
+[INFO] Once the ticket is accepted on staging: gh pr merge ABC-123 --rebase
+[INFO] Rebase only - a squash merge makes closed see the ticket as unmerged
+[INFO] BUILD FAILURE
+```
+
+`resolved` and `resolved sync` (deprecated)
+-------------------------------------------
 
 `resolved` and `resolved sync` are deprecated. They still run, and nothing about
 them has been removed from the tool, but they are no longer part of the flow a
 ticket is meant to follow:
 
 ```
-in-progress  →  pr  →  to-staging  →  deployable  →  closed
+in-progress  →  gh pr create  →  to-staging  →  gh pr merge --rebase  →  closed
 ```
 
 Use [`to-staging`](commands.md#to-staging) instead. It does what `resolved` and
 `resolved sync` do together — cherry-pick the new commits onto staging, commit
 them, record the sync — in one command, and it writes the commit message for you.
 
-The one place they are still needed
------------------------------------
+### The one place they are still needed
 
 `to-staging` refuses to commit over a cherry-pick that conflicted, and the advice
 it prints in that case names `resolved sync`, because committing what is staged

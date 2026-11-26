@@ -19,27 +19,30 @@ branch name.
 The stages
 ----------
 
-Five stages, in the order a ticket runs them:
+Three `gitflow` stages, with the pull request opened and merged in between by
+the [GitHub CLI](https://cli.github.com):
 
 ```
-in-progress  →  pr  →  to-staging  →  deployable  →  closed
-                        (repeat)
+in-progress  →  gh pr create  →  to-staging  →  gh pr merge --rebase  →  closed
+                                  (repeat)
 ```
 
 ```bash
-gitflow ABC-123 in-progress   # create or switch to the ticket branch
-gitflow ABC-123 pr            # print the pull-request link for review
-gitflow ABC-123 to-staging    # put the new commits on staging
-                              # (--verify "cmd" checks them before the commit)
-gitflow ABC-123 deployable    # fold the ticket into production
-gitflow ABC-123 closed        # delete the ticket branches
+gitflow ABC-123 in-progress    # create or switch to the ticket branch
+gh pr create --base master     # open the pull request for review
+gitflow ABC-123 to-staging     # put the new commits on staging
+                               # (--verify "cmd" checks them before the commit)
+gh pr merge ABC-123 --rebase   # ship it, once it is accepted on staging
+gitflow ABC-123 closed         # delete the ticket branches
 ```
 
 Only `to-staging` repeats: you run it again for every round of commits while the
-ticket is being reviewed on staging. The other four happen once per ticket.
+ticket is being reviewed on staging. Everything else happens once per ticket.
 
 `resolved` and `resolved sync` are **deprecated**. They split `to-staging` into
-two steps, and nothing but a conflicted sync needs them now — see
+two steps, and nothing but a conflicted sync needs them now. `pr` and
+`deployable` were **removed** in favour of `gh pr create` and
+`gh pr merge --rebase`. All of them are covered in
 [docs/deprecated.md](docs/deprecated.md).
 
 One further command acts on the tool itself rather than on a ticket:
@@ -53,12 +56,18 @@ Requirements
 
 * bash and git, on macOS or Linux
 * an SSH key loaded in your agent when the project's `origin` is an ssh URL on
-  github.com: every stage but `pr` checks it with
+  github.com: every stage checks it with
   `ssh -o BatchMode=yes -T git@github.com` before it starts, and that check never
   prompts. A greeting answers 0 or 1 and passes; a refusal answers 255 and asks
   for the key; any other status is not `ssh` reporting on the key at all - 127 is
   `ssh` missing - and stops the run just the same, rather than leave it to fail
   at the push
+* the [GitHub CLI](https://cli.github.com), logged in (`gh auth login`), for
+  opening and merging the pull request
+* "Allow rebase merging" on the GitHub repository. Turn squash merging off while
+  you are there: a squash commit matches none of the ticket's commits, so
+  `closed` takes every squashed ticket for unmerged work and asks before
+  deleting it
 * a clone of the project, with the production branch checked out
 * rights to write into `/usr/local/bin` for the install step, which on a default
   macOS or Linux box means root; the installer runs `sudo` for you
@@ -115,13 +124,14 @@ Quick start: one ticket, end to end
    git commit -am "ABC-123 add the thing" && git push
    ```
 
-3. **Open the pull request.** Prints the compare URL into production and runs no
-   git commands. Open it as soon as there is something to read, so the code
-   review runs while the ticket is being tested on staging. The PR is a review
-   vehicle: leave it unmerged, step 5 is what updates production.
+3. **Open the pull request** with the GitHub CLI, from the ticket branch, into
+   production. Open it as soon as there is something to read, so the code
+   review runs while the ticket is being tested on staging. Leave it open until
+   the ticket is accepted there: merging it in step 5 is what updates
+   production.
 
    ```bash
-   gitflow ABC-123 pr
+   gh pr create --base master
    ```
 
 4. **Put it on staging.** Cherry-picks the commits added since your last sync,
@@ -144,14 +154,18 @@ Quick start: one ticket, end to end
    prints the commands that finish it — see
    [conflicts](docs/troubleshooting.md#conflicts).
 
-5. **Ship it.** Rebases the ticket onto production, then moves production onto the
-   ticket. Review, then push yourself:
+5. **Ship it.** Once the ticket is accepted on staging, merge the pull request.
+   `--rebase` puts the ticket's commits on production one by one, with no merge
+   commit, and GitHub records the PR as merged:
 
    ```bash
-   gitflow ABC-123 deployable
-   git log --oneline -5
-   git push origin master
+   gh pr merge ABC-123 --rebase
    ```
+
+   Never `--squash` (see the requirements), and leave out `--delete-branch`:
+   step 6 deletes the ticket branch together with its bookmarks. When GitHub
+   says the branch cannot be rebased, it conflicts with production; see
+   [the merge conflicts](docs/troubleshooting.md#the-pull-request-cannot-be-rebased).
 
 6. **Clean up.** Deletes the ticket branch and its tracking branches, local and
    remote. The deployed branches are never deleted, and a branch carrying commits
@@ -184,26 +198,27 @@ Using it from an agent
 ----------------------
 
 `skills/gitflow` is a Claude Code skill that teaches an agent this workflow: the
-five stages and what each one leaves behind, the pushes it must not make on your
-behalf, and how to finish a sync that conflicted. Copy it into the project it will
-be used on:
+stages and what each one leaves behind, opening the pull request and merging it
+only on your word, the pushes it must not make on your behalf, and how to finish
+a sync or a merge that conflicted. Link it into your Claude Code skills, from
+this clone:
 
 ```bash
-mkdir -p /path/to/project/.claude/skills
-cp -R skills/gitflow /path/to/project/.claude/skills/
+mkdir -p ~/.claude/skills
+ln -s "$PWD/skills/gitflow" ~/.claude/skills/gitflow
 ```
 
-Commit it there and everyone working on that project gets the same instructions.
-The skill reads nothing from this clone, so there is no path to fix afterwards —
-but it does describe the stages as they stand, so copy it again after an update
-that changes one.
+A link rather than a copy, because the skill describes the workflow as it
+stands: `gitflow self update` then updates the skill along with the tool, where
+a copy goes on describing stages that may have been removed since. Moving the
+clone breaks the link the same way it breaks the `gitflow` install.
 
 Checking a change
 -----------------
 
-`test/smoke.sh` runs the whole flow — `in-progress`, `pr`, `to-staging`,
-`deployable`, `closed` — against repositories it builds and throws away, and
-checks the exit status of each stage against what its banner said:
+`test/smoke.sh` runs the whole flow — `in-progress`, `to-staging`, a rebase-merge
+the way GitHub makes one, `closed` — against repositories it builds and throws
+away, and checks the exit status of each stage against what its banner said:
 
 ```bash
 ./test/smoke.sh                  # the clone it lives in

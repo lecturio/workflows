@@ -6,7 +6,7 @@ source "$WF_DIR/functions/execution.sh"
 source "$WF_DIR/functions/branches.sh"
 source "$WF_DIR/functions/inflight.sh"
 
-COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" "pr" )
+COMMANDS=( "in-progress" "to-staging" "resolved" "closed" )
 
 #
 # Validation of input parameters
@@ -21,6 +21,34 @@ function validate_input_params() {
 		print_build_msg
 		exit 1
 	fi
+
+	# Removed in 0.0.4: the pull request is opened and merged with gh, where pr
+	# only printed a compare URL and deployable rebased production locally and
+	# left the PR open over commits GitHub could not match. Named here so the
+	# old habit gets the new command rather than a bare list of stages.
+	case "$WF_COMMAND" in
+		pr)
+			# The base is the production branch, which .gitflow may rename, and
+			# this runs before the run loads it - so it reads the file here
+			# rather than print a master that project has not got.
+			load_gitflow "$WF_GIT_ROOT/.gitflow"
+			: "${WF_PROD_BRANCH:=master}"
+			require_safe_branch_name "$WF_PROD_BRANCH" "WF_PROD_BRANCH"
+			WF_STATUS=1
+			print_err "pr was removed: open the pull request with the GitHub CLI"
+			print_msg "From the ticket branch: gh pr create --base $WF_PROD_BRANCH --head $WF_TASK"
+			print_build_msg
+			exit 1
+			;;
+		deployable)
+			WF_STATUS=1
+			print_err "deployable was removed: merge the pull request with the GitHub CLI"
+			print_msg "Once the ticket is accepted on staging: gh pr merge $WF_TASK --rebase"
+			print_msg "Rebase only - a squash merge makes closed see the ticket as unmerged"
+			print_build_msg
+			exit 1
+			;;
+	esac
 
 	VALID_CMD=0
 	for CMD in "${COMMANDS[@]}"
@@ -111,26 +139,6 @@ function trim_whitespace() {
 	s="${s#"${s%%[![:space:]]*}"}"
 	s="${s%"${s##*[![:space:]]}"}"
 	printf '%s' "$s"
-}
-
-#
-# Percent-encode a git ref for a GitHub compare URL (so / becomes %2F).
-# $1 - branch name
-#
-function github_ref_encode() {
-	local s="$1" out="" i c hex
-	local LC_ALL=C
-	for (( i = 0; i < ${#s}; i++ )); do
-		c="${s:i:1}"
-		case "$c" in
-			[A-Za-z0-9._~-]) out+="$c" ;;
-			*)
-				printf -v hex '%02X' "'$c"
-				out+="%$hex"
-				;;
-		esac
-	done
-	printf '%s' "$out"
 }
 
 #

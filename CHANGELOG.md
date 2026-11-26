@@ -6,6 +6,24 @@ Current version: 0.0.4.SNAPSHOT
 0.0.4.SNAPSHOT
 --------------
 
+* `pr` is removed. It printed a GitHub compare URL and did nothing else;
+  `gh pr create --base master` from the ticket branch opens the pull request
+  itself. `gitflow ABC-123 pr` now fails with that command rather than the list
+  of stages, and the github.com key check no longer has a stage to skip. See
+  [docs/deprecated.md](docs/deprecated.md#pr-removed)
+* `deployable` is removed: the ticket ships by merging its pull request with
+  `gh pr merge ABC-123 --rebase`. Production ends up the same shape, the
+  ticket's own commits with no merge commit, but `deployable` rebased on your
+  machine and GitHub could not match the new commits to the pull request, which
+  stayed open over work production already had until somebody closed it by
+  hand. The merge now records itself, and nobody pushes to production, so it
+  can be protected. `gitflow ABC-123 deployable` fails with the merge command.
+  Allow rebase merging on the repository and turn squash off: a squash commit
+  matches none of the ticket's commits, so `closed` takes a squashed ticket for
+  unmerged work. See [docs/deprecated.md](docs/deprecated.md#deployable-removed)
+* the skill opens the pull request and merges it, the merge only on the user's
+  explicit word, and the README installs it as a link into this clone rather
+  than a copy, so `gitflow self update` keeps it current
 * `to-staging --verify "command"` runs a command on the picked tree before
   anything is committed. When it fails, staging is reset to where it was, no
   commit and no `ABC-123-track-N` bookmark exist, locally or on origin, and the

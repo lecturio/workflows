@@ -3,15 +3,10 @@
 #
 # Whether a github.com key is worth checking before the stage runs. The stages
 # talk to whatever "origin" is, so on a project hosted anywhere else the answer
-# says nothing about the run that follows, and `pr` only prints a compare URL -
-# it opens no connection at all. An https origin is not authenticated with an
-# ssh key either.
+# says nothing about the run that follows. An https origin is not
+# authenticated with an ssh key either.
 #
 function needs_github_key() {
-	if [ "$WF_COMMAND" == "pr" ]; then
-		return 1
-	fi
-
 	case "$WF_REPO" in
 		git@github.com:* | ssh://git@github.com/*)
 			return 0
