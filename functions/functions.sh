@@ -28,10 +28,15 @@ function validate_input_params() {
 	# old habit gets the new command rather than a bare list of stages.
 	case "$WF_COMMAND" in
 		pr)
+			# The base is the production branch, which .gitflow may rename, and
+			# this runs before the run loads it - so it reads the file here
+			# rather than print a master that project has not got.
+			load_gitflow "$WF_GIT_ROOT/.gitflow"
+			: "${WF_PROD_BRANCH:=master}"
+			require_safe_branch_name "$WF_PROD_BRANCH" "WF_PROD_BRANCH"
 			WF_STATUS=1
 			print_err "pr was removed: open the pull request with the GitHub CLI"
-			print_msg "From the ticket branch: gh pr create --base master --head $WF_TASK"
-			print_msg "--base is your production branch, if .gitflow names another"
+			print_msg "From the ticket branch: gh pr create --base $WF_PROD_BRANCH --head $WF_TASK"
 			print_build_msg
 			exit 1
 			;;

@@ -111,6 +111,10 @@ stage ABC-123 pr
 check "pr is refused" 1 "$STATUS"
 check "pr points at gh" yes "`says 'gh pr create --base master --head ABC-123'`"
 check "pr reports the failure" yes "`says 'BUILD FAILURE'`"
+echo "WF_PROD_BRANCH=main" > .gitflow
+stage ABC-123 pr
+rm .gitflow
+check "pr names the production branch .gitflow sets" yes "`says 'gh pr create --base main --head ABC-123'`"
 
 stage ABC-123 to-staging -m "sync it"
 check "to-staging exits 0" 0 "$STATUS"

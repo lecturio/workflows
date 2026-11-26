@@ -16,12 +16,12 @@ gh pr create --base master          # from the ticket branch
 `master`. Open it once, early, and leave it open while the ticket goes round
 staging; merging it is what ships the ticket (below).
 
-Running `gitflow ABC-123 pr` now fails with that command:
+Running `gitflow ABC-123 pr` now fails with that command, naming the production
+branch `.gitflow` sets:
 
 ```
 [ERROR] pr was removed: open the pull request with the GitHub CLI
 [INFO] From the ticket branch: gh pr create --base master --head ABC-123
-[INFO] --base is your production branch, if .gitflow names another
 [INFO] BUILD FAILURE
 ```
 
