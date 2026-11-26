@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # The flow end to end against throwaway repositories: in-progress,
-# to-staging, deployable and closed, each checked for the exit status its
+# to-staging, a rebase-merge the way GitHub makes one, and closed, each checked for the exit status its
 # banner promises and for what it left behind. There is no framework here on
 # purpose - a stage is run, and what it did is looked at.
 #
@@ -168,12 +168,20 @@ stage VER-1 to-staging --verify true extra
 check "a word after the --verify command is refused" 1 "$STATUS"
 check "the refusals commit nothing" "$STAGING_BEFORE" "`git rev-parse staging`"
 
-git checkout -q ABC-123
+# deployable is gone too, and names the merge that replaced it
 stage ABC-123 deployable
-check "deployable exits 0" 0 "$STATUS"
-check "deployable reports success" yes "`says 'BUILD SUCCESS'`"
-check "deployable puts the work on production" "the work" "`git log -1 --format=%s master`"
+check "deployable is refused" 1 "$STATUS"
+check "deployable points at gh" yes "`says 'gh pr merge ABC-123 --rebase'`"
+
+# what "gh pr merge --rebase" leaves: the ticket's commits replayed onto
+# production with new SHAs, which closed has to recognise by patch. The
+# committer date is pinned so the replay cannot land on the same SHAs within
+# the same second.
+git checkout -q master
+GIT_COMMITTER_DATE="2001-01-01T00:00:00Z" git cherry-pick origin/master..ABC-123 >/dev/null
 git push -q origin master
+check "the merge puts the work on production" "the work" "`git log -1 --format=%s master`"
+check "the merge gives the work new SHAs" no "`git merge-base --is-ancestor ABC-123 master && echo yes || echo no`"
 
 stage ABC-123 closed
 check "closed exits 0" 0 "$STATUS"

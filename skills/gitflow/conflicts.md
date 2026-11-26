@@ -4,7 +4,7 @@ Conflicts and half-finished operations
 Read this when a stage names a cherry-pick, a rebase, a merge, a revert or a
 conflict. Two rules first:
 
-* **The message is the instruction.** Both stages print the exact commands that
+* **The message is the instruction.** The stages print the exact commands that
   finish the job, and those commands account for what git has actually left
   behind. Follow them in order rather than composing your own.
 * **A conflict is a judgement call.** Resolving one means knowing which side is
@@ -12,8 +12,8 @@ conflict. Two rules first:
   put the choice to the user with the conflicted hunk; do not pick a side to get
   the stage green.
 
-Nothing here is fixed by re-running a stage. `to-staging`, `resolved` and
-`deployable` all refuse while a resolution is unfinished — which is the point, so
+Nothing here is fixed by re-running a stage. `to-staging` and `resolved` both
+refuse while a resolution is unfinished — which is the point, so
 a half-finished resolution is never eaten — and each says what is left to do.
 
 A `to-staging` cherry-pick that conflicted
@@ -73,7 +73,7 @@ resolved so far. Ask before running it.
 A stage refuses because something is in flight
 ----------------------------------------------
 
-`to-staging`, `resolved` and `deployable` all stop on the states below, name the
+`to-staging` and `resolved` both stop on the states below, name the
 operation and the branch it is on, and change nothing. Each of these is a
 different state, and the response differs. Do not treat them as one "dirty repo"
 problem.
@@ -81,8 +81,6 @@ problem.
 The advice differs by stage, because what you can do next does. `resolved` is
 the stage for finishing a hand-resolved sync, so for a cherry-pick working
 through this ticket's own range it prints the `resolved sync` lines below.
-`deployable` can carry nothing forward into its rebases, so it hands every one
-of them back to git with `--continue` and `--abort`.
 
 | Message | What it means | The way out |
 | --- | --- | --- |
@@ -113,34 +111,33 @@ The fix is upstream of the sync: the ticket branch has a merge in it. Rebase the
 ticket onto production (`git pull --rebase origin master` on the branch) instead
 of merging into it, and the range becomes pickable again.
 
-A `deployable` rebase that conflicted
--------------------------------------
+The pull request cannot be rebased
+----------------------------------
 
-You are in a rebase, not a cherry-pick. `git status` names the branch being
-rebased, which says which of the two you are in — the first (ticket onto
-production, where conflicts nearly always are) or the second (usually a
-fast-forward).
+`gh pr merge ABC-123 --rebase` refuses, saying the branch cannot be rebased: the
+ticket conflicts with production. Nothing was merged. GitHub has no
+`-Xignore-all-space`, so a whitespace-only difference is enough.
+
+The way out is to rebase the ticket branch onto production locally and force
+push it. That rewrites a shared branch, so put it to the user, with the commands,
+and run it only on their yes:
 
 ```bash
-# fix the files
-git add <files>          # or git rm
-git rebase --continue
-gitflow ABC-123 deployable
+git checkout ABC-123
+git pull --rebase origin master               # conflicts stop here
+git push --force-with-lease origin ABC-123
+gh pr merge ABC-123 --rebase                  # rule 3 still applies
 ```
 
-Re-running the stage is **not** how you start over. It refuses while the rebase
-is open, whether it is its own or one the user started:
+When the rebase stops on a conflict, the judgement-call rule above applies: fix
+the files, `git add` them, `git rebase --continue`, and put any hunk where both
+sides are plausible to the user. `git rebase --abort` throws away what was
+resolved, so it is the user's call - rule 5.
 
-```
-[ERROR] A rebase with unresolved conflicts is in progress on a detached HEAD
-[INFO] Fix the conflicted files and "git add" them, then:
-[INFO]   git rebase --continue                        # finishes it
-[INFO]   git rebase --abort                           # or drop it
-[INFO] Then run deployable again
-```
-
-Finishing it is the answer. `git rebase --abort` throws away everything resolved
-so far, so it is the user's call, not yours — rule 5.
+Use `--force-with-lease`, never `--force`: it refuses when somebody pushed to
+the branch since the fetch. The rebase invalidates the ticket's staging
+bookmarks, which only matters if the ticket goes round staging again - the next
+`to-staging` then stops and prints the commands that re-establish them.
 
 The ticket branch looks diverged during a sync
 ----------------------------------------------

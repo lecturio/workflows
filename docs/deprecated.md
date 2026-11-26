@@ -13,8 +13,8 @@ gh pr create --base master          # from the ticket branch
 ```
 
 `--base` is the production branch, so use the one `.gitflow` names if it is not
-`master`. The pull request is still for code review only: open it once, early,
-and leave it unmerged — `deployable` plus your push is what updates production.
+`master`. Open it once, early, and leave it open while the ticket goes round
+staging; merging it is what ships the ticket (below).
 
 Running `gitflow ABC-123 pr` now fails with that command:
 
@@ -22,6 +22,43 @@ Running `gitflow ABC-123 pr` now fails with that command:
 [ERROR] pr was removed: open the pull request with the GitHub CLI
 [INFO] From the ticket branch: gh pr create --base master --head ABC-123
 [INFO] --base is your production branch, if .gitflow names another
+[INFO] BUILD FAILURE
+```
+
+`deployable` (removed)
+----------------------
+
+`deployable` was removed in 0.0.4. It rebased the ticket onto production, moved
+production onto the ticket and left the push to you. Merging the pull request on
+GitHub with a rebase does the same and records it:
+
+```bash
+gh pr merge ABC-123 --rebase        # once the ticket is accepted on staging
+```
+
+Production ends up the same shape either way: the ticket's own commits, with no
+merge commit. What changes is the pull request. The rebase made new commits that
+GitHub could not match to it, so after `deployable` and the push the PR stayed
+open over work production already had, until somebody closed it by hand. Merging
+on GitHub does the rebase and marks the PR merged in one step, and master can be
+protected, since nobody pushes to it any more.
+
+Two differences from `deployable`:
+
+* **Rebase only.** A squash merge leaves one commit that matches none of the
+  ticket's, so `closed` takes the ticket for unmerged work and asks before
+  deleting it. Turn squash merging off in the repository settings.
+* **Conflicts are yours to rebase.** GitHub refuses to rebase-merge a branch that
+  conflicts with production, and has no `-Xignore-all-space`, so whitespace-only
+  differences conflict too. See
+  [the pull request cannot be rebased](troubleshooting.md#the-pull-request-cannot-be-rebased).
+
+Running `gitflow ABC-123 deployable` now fails with the merge command:
+
+```
+[ERROR] deployable was removed: merge the pull request with the GitHub CLI
+[INFO] Once the ticket is accepted on staging: gh pr merge ABC-123 --rebase
+[INFO] Rebase only - a squash merge makes closed see the ticket as unmerged
 [INFO] BUILD FAILURE
 ```
 
@@ -33,7 +70,7 @@ them has been removed from the tool, but they are no longer part of the flow a
 ticket is meant to follow:
 
 ```
-in-progress  →  to-staging  →  deployable  →  closed
+in-progress  →  gh pr create  →  to-staging  →  gh pr merge --rebase  →  closed
 ```
 
 Use [`to-staging`](commands.md#to-staging) instead. It does what `resolved` and

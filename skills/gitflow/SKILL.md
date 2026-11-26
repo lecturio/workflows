@@ -1,6 +1,6 @@
 ---
 name: gitflow
-description: Walk one ticket from a fresh branch to a deployed change with the `gitflow` command - create the ticket branch, print its pull-request link, cherry-pick it onto staging, fold it into production, delete its branches. Use when asked to start, sync, stage, ship, deploy or close a ticket ("put ABC-123 on staging", "make ABC-123 deployable", "start work on ABC-123", "clean up ABC-123"), whenever a task names a ticket branch together with a stage, and when a staging sync conflicts and has to be finished by hand.
+description: Walk one ticket from a fresh branch to a deployed change with the `gitflow` command and the GitHub CLI - create the ticket branch, open its pull request, cherry-pick it onto staging, merge the pull request into production, delete its branches. Use when asked to start, sync, stage, ship, deploy or close a ticket ("put ABC-123 on staging", "open the PR for ABC-123", "ship ABC-123", "make ABC-123 deployable", "start work on ABC-123", "clean up ABC-123"), whenever a task names a ticket branch together with a stage, and when a staging sync or the merge conflicts and has to be finished by hand.
 ---
 
 gitflow
@@ -17,7 +17,8 @@ gitflow <TICKET> <STAGE>
 `ABC-123`. The project has two deployed branches: **production** (`master` by
 default) on the live server, and **staging** (`staging` by default) on the staging
 server. A ticket branch is cut from production, pushed onto staging as often as
-the review needs, and folded back into production once it is accepted.
+the review needs, and merged into production through its pull request once it is
+accepted.
 
 If the project has a `.gitflow` file at its repository root, read it first — it
 renames those two branches (`WF_PROD_BRANCH`, `WF_STAGING_BRANCH`), and every
@@ -29,22 +30,26 @@ The stages
 ----------
 
 ```
-in-progress  →  to-staging  →  deployable  →  closed
-                 (repeat)
+in-progress  →  gh pr create  →  to-staging  →  gh pr merge --rebase  →  closed
+                                  (repeat)
 ```
 
-Only `to-staging` repeats: once per round of commits while the ticket is being
-reviewed on staging. The other three happen once per ticket. The pull request
-for code review is opened with `gh`, not `gitflow` - see [below](#the-pull-request).
-`gitflow ABC-123 pr` was removed and only prints that pointer now. `resolved` and
-`resolved sync` are deprecated — run them only when a failure message names them,
-which happens when a staging sync conflicted (see [conflicts.md](conflicts.md)).
+`in-progress`, `to-staging` and `closed` are `gitflow` stages. Opening and
+merging the pull request are `gh` commands, described below in their place:
+[the pull request](#the-pull-request) and [shipping](#shipping). Only
+`to-staging` repeats: once per round of commits while the ticket is being
+reviewed on staging. Everything else happens once per ticket.
 
-Run one stage and stop there. What separates the stages happens outside git — a
+`gitflow ABC-123 pr` and `gitflow ABC-123 deployable` were removed, and only
+print the `gh` command that replaced them. `resolved` and `resolved sync` are
+deprecated — run them only when a failure message names them, which happens when
+a staging sync conflicted (see [conflicts.md](conflicts.md)).
+
+Run one step and stop there. What separates the steps happens outside git — a
 code review, a round of testing on staging, a push somebody has to make — so
 chaining them in one sitting is how a ticket reaches production before anyone has
-looked at it. `deployable` waits until the ticket has been accepted on staging,
-and `closed` until production has been pushed.
+looked at it. The merge waits until the user says the ticket has been accepted on
+staging, and `closed` until the merge has happened.
 
 Rules
 -----
@@ -53,12 +58,17 @@ Rules
    or `[INFO] BUILD FAILURE`, and exits 0 or 1 to match, so either one answers.
    Read the last lines and the `[ERROR]` lines above them; never report a stage
    as done without seeing `BUILD SUCCESS`.
-2. **Never push staging or production.** `to-staging` and `deployable` stop with
-   the commits sitting in the local branch, and that manual push is deliberate.
-   Show what is queued (`git log --oneline origin/staging..staging`) and let the
-   user push, or ask first and quote the exact command.
-3. **Never merge the pull request.** It exists for code review and nothing
-   else; production is updated by `deployable` plus a push.
+2. **Never push staging or production.** `to-staging` stops with the commit
+   sitting in the local branch, and that manual push is deliberate. Show what is
+   queued (`git log --oneline origin/staging..staging`) and let the user push, or
+   ask first and quote the exact command. Production is never pushed at all; it
+   changes only through the merge.
+3. **Merge only on the user's word.** Merging the pull request is what ships the
+   ticket to the live server. Run `gh pr merge` only when the user has said, in
+   so many words, that the ticket is accepted and should ship - not because the
+   PR is approved or staging looks fine. Quote the command and wait for a yes.
+   Always `--rebase`; never `--squash`, `--merge`, `--admin` or
+   `--delete-branch`.
 4. **Ask before `closed`.** It deletes the ticket branch and every
    `ABC-123-track-N` bookmark, local and remote, with no undo. It stops to ask
    only when some of them hold commits production has not got, and with no
@@ -98,7 +108,8 @@ Not a `gitflow` stage. Open it once, as soon as the ticket branch has commits,
 so review runs while the ticket is tested on staging; it follows the branch, so
 later pushes need no second one. `--base` is the production branch, which
 `.gitflow` may name differently. Ask before creating it - it is visible to the
-team - and give the user the URL `gh` prints.
+team - and give the user the URL `gh` prints. `gh pr view ABC-123` says whether
+one is open already.
 
 `to-staging`
 ------------
@@ -120,8 +131,8 @@ stop for review and refuses rather than sweep anything in:
 * **no modified tracked files** — commit them on the ticket branch. Untracked
   files never block it. Do not stash on the user's behalf without saying so;
 * **no half-finished git operation** — a cherry-pick, rebase, merge, revert or
-  `git am` in flight makes it refuse and name what it found. `resolved` and
-  `deployable` refuse on the same list. See [conflicts.md](conflicts.md).
+  `git am` in flight makes it refuse and name what it found. `resolved` refuses
+  on the same list. See [conflicts.md](conflicts.md).
 
 Leave `-m` out and let it name the commits it picked (`ABC-123 a1b2c3d 4e5f6a7`)
 unless the user wants a subject of their own. `-m` takes every word after it, so
@@ -139,28 +150,31 @@ clean up, so do not reset, delete branches or re-pick by hand; report the
 command's output and fix the cause on the ticket branch. Exit 1 keeps its usual
 meaning (a conflict, a refusal, an error).
 
-`deployable`
-------------
+Shipping
+--------
 
 ```bash
-gitflow ABC-123 deployable
+gh pr merge ABC-123 --rebase
 ```
 
-Rebases the ticket onto production, then moves production onto the ticket, so
-production ends up carrying the ticket's own commits with no merge commit. Leaves
-you on production, ahead of `origin/master`, and ends on
-`[INFO] Now push it: git push origin master` - left out when the rebases moved
-production nowhere, which is a ticket already in production or a second run. Show
-the user `git log --oneline -5` and that line when it is there; the push is
-theirs. It also refuses a ticket branch that is not in
-the repository, which is usually a typo in the ticket.
+Not a `gitflow` stage, and the one step that reaches the live server: rule 3
+applies in full. Before asking the user, check the PR can be merged:
 
-Run it once, at the end, after the ticket has been accepted on staging. Conflicts
-almost always land in the first rebase — see [conflicts.md](conflicts.md).
+```bash
+gh pr view ABC-123 --json state,mergeable,mergeStateStatus,reviewDecision
+```
 
-It refuses while any git operation is open, its own conflicted rebase included,
-so re-running it is not a way to start over and nothing you left half-resolved
-is thrown away.
+`--rebase` replays the ticket's commits onto production with no merge commit,
+and GitHub marks the PR merged. The commits get new SHAs, so the local ticket
+branch no longer looks contained in production - `closed` compares by patch and
+copes with that. A squash would not: its one commit matches none of the ticket's,
+and `closed` would take the whole ticket for unmerged work.
+
+When GitHub refuses because the branch cannot be rebased, the ticket conflicts
+with production. Rebasing it is a force push, so it is the user's call - see
+[conflicts.md](conflicts.md#the-pull-request-cannot-be-rebased). A refusal for
+missing approvals or failing checks is for the user to resolve; never reach for
+`--admin`.
 
 `closed`
 --------
@@ -199,15 +213,16 @@ When the user names a ticket without naming a stage, work it out before choosing
 ```bash
 git fetch
 git branch -a --list '*ABC-123*'                    # the branch, and its -track-N bookmarks
-git log --oneline origin/master..ABC-123            # commits production is missing
 git log --oneline origin/ABC-123-track-2..ABC-123   # not yet on staging (highest N)
-git branch -r --contains ABC-123                    # origin/master listed = already shipped
+gh pr view ABC-123 --json state,url                 # no PR, OPEN, or MERGED
 ```
 
 No branch anywhere means the ticket has not started (`in-progress`). Bookmarks
-count the rounds already synced: none means staging has never had it. When
-`origin/master` contains the ticket tip, `deployable` has landed and only `closed`
-is left.
+count the rounds already synced: none means staging has never had it. No pull
+request means it has not been opened yet. `MERGED` means the ticket has shipped
+and only `closed` is left. Do not judge that from `git branch --contains`: the
+rebase-merge gives the commits new SHAs, so production never contains the ticket
+tip.
 
 When a run fails
 ----------------
@@ -222,9 +237,11 @@ When a run fails
 | `[ERROR] Commit or stash your local changes before to-staging` | commit the modified tracked files on the ticket branch, then re-run |
 | `[ERROR] Configured branch origin/staging does not exist` | stop and ask. The deployed branches must already exist on `origin`; the tool never creates them |
 | `[ERROR]` lines quoting git on a checkout (`… would be overwritten by checkout`, `already used by worktree`) | the stage could not check out the branch it works on, and nothing after that checkout ran - earlier steps of the stage may already have done their work. The reason is git's own: uncommitted work in the way, or another worktree holding the branch. Show it and let the user decide - do not stash, reset or remove files to clear it |
-| `Available commands are: …` | the stage name was wrong — it is `deployable`, not `deployed` |
+| `[ERROR] pr was removed` / `[ERROR] deployable was removed` | the step is a `gh` command now: [the pull request](#the-pull-request), [shipping](#shipping) |
+| `Available commands are: …` | the stage name was wrong |
 | `[ERROR] A cherry-pick / rebase / merge / revert / am … is in progress on …` | the stage found a git operation open and changed nothing. Report what it named and follow its printed lines; do not abort anything to clear the way (rule 5) |
 | anything naming a cherry-pick, a rebase, a merge, a revert or a conflict | [conflicts.md](conflicts.md) |
+| `gh pr merge` refuses: the branch cannot be rebased | [conflicts.md](conflicts.md#the-pull-request-cannot-be-rebased) |
 
 The noisier commands write their output to a log of the run's own,
 `gitflow-output.XXXXXX` under `$TMPDIR` (`/tmp` when that is unset). One file per

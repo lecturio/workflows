@@ -6,7 +6,7 @@ source "$WF_DIR/functions/execution.sh"
 source "$WF_DIR/functions/branches.sh"
 source "$WF_DIR/functions/inflight.sh"
 
-COMMANDS=( "in-progress" "to-staging" "resolved" "deployable" "closed" )
+COMMANDS=( "in-progress" "to-staging" "resolved" "closed" )
 
 #
 # Validation of input parameters
@@ -22,17 +22,28 @@ function validate_input_params() {
 		exit 1
 	fi
 
-	# removed in 0.0.4: gh opens the pull request itself, where pr only printed
-	# a compare URL. Named here so the old habit gets the new command rather
-	# than a bare list of stages.
-	if [ "$WF_COMMAND" == "pr" ]; then
-		WF_STATUS=1
-		print_err "pr was removed: open the pull request with the GitHub CLI"
-		print_msg "From the ticket branch: gh pr create --base master --head $WF_TASK"
-		print_msg "--base is your production branch, if .gitflow names another"
-		print_build_msg
-		exit 1
-	fi
+	# Removed in 0.0.4: the pull request is opened and merged with gh, where pr
+	# only printed a compare URL and deployable rebased production locally and
+	# left the PR open over commits GitHub could not match. Named here so the
+	# old habit gets the new command rather than a bare list of stages.
+	case "$WF_COMMAND" in
+		pr)
+			WF_STATUS=1
+			print_err "pr was removed: open the pull request with the GitHub CLI"
+			print_msg "From the ticket branch: gh pr create --base master --head $WF_TASK"
+			print_msg "--base is your production branch, if .gitflow names another"
+			print_build_msg
+			exit 1
+			;;
+		deployable)
+			WF_STATUS=1
+			print_err "deployable was removed: merge the pull request with the GitHub CLI"
+			print_msg "Once the ticket is accepted on staging: gh pr merge $WF_TASK --rebase"
+			print_msg "Rebase only - a squash merge makes closed see the ticket as unmerged"
+			print_build_msg
+			exit 1
+			;;
+	esac
 
 	VALID_CMD=0
 	for CMD in "${COMMANDS[@]}"
